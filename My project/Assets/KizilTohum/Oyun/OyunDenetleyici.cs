@@ -77,9 +77,13 @@ namespace KizilTohum
             PlayerPrefs.Save();
         }
 
+        /// <summary>Arayüz atar: true dönerse klavye oyunu yönetmez (menü, kart, son ekranı).</summary>
+        public System.Func<bool> KlavyeKilitli;
+
         void Update()
         {
             if (Yonetici == null) return;
+            if (KlavyeKilitli != null && KlavyeKilitli()) return;
             Keyboard k = Keyboard.current;
             if (k == null) return;
 

@@ -28,7 +28,7 @@ namespace KizilTohum
         Canvas canvas;
 
         GameObject menu, oyunEkrani, kartPaneli, sonEkrani, simPaneli;
-        Image sahne, duvarDolgu;
+        Image sahne, duvarDolgu, portre, ipucuKutu, linKutu, menuZemin, sonZemin;
         Text duvarYazi, gorevBaslik, konusanYazi, metinYazi, ipucuYazi, linYazi, tepkiYazi, simYazi, kartBaslik, kartMetin, sonYazi, menuNot;
         RectTransform secenekKap, simKap;
         Button devamBtn, ipucuBtn;
@@ -64,9 +64,19 @@ namespace KizilTohum
             }
             Kur();
             Bagla();
+            oyun.KlavyeKilitli = () => menu.activeSelf || kartPaneli.activeSelf || sonEkrani.activeSelf;
             string derin = OyunDenetleyici.DerinBaglantiGorevi();
             if (!string.IsNullOrEmpty(derin) && oyun.GoreveGit(derin)) Goster(false);
             else Goster(true);
+        }
+
+        void Update()
+        {
+            if (ipucuKutu != null) ipucuKutu.enabled = !string.IsNullOrEmpty(ipucuYazi.text);
+            if (linKutu != null) linKutu.enabled = !string.IsNullOrEmpty(linYazi.text);
+            var k = UnityEngine.InputSystem.Keyboard.current;
+            if (k == null || kartPaneli == null || !kartPaneli.activeSelf) return;
+            if (k.spaceKey.wasPressedThisFrame || k.enterKey.wasPressedThisFrame) kartPaneli.SetActive(false);
         }
 
         // ---------- kurulum ----------
@@ -107,32 +117,44 @@ namespace KizilTohum
 
             // alt panel
             var alt = Yuz("Alt", oyunEkrani.transform, Panel);
+            Kaplama(alt, "diyalog_paneli_9slice", Panel);
             Konum(alt.rectTransform, 0, 0, 1, 0.46f, 0, 0, 0, 0);
+            portre = Yuz("Portre", oyunEkrani.transform, Color.white);
+            portre.preserveAspect = true; portre.raycastTarget = false;
+            Konum(portre.rectTransform, 0.01f, 0.46f, 0.20f, 0.46f, 0, 0, 0, 400);
+            portre.gameObject.SetActive(false);
             konusanYazi = Yazi("Konusan", alt.transform, 28, Sari, TextAnchor.UpperLeft);
-            Konum(konusanYazi.rectTransform, 0.02f, 0.88f, 0.6f, 0.99f, 0, 0, 0, 0);
+            Konum(konusanYazi.rectTransform, 0.035f, 0.80f, 0.6f, 0.90f, 0, 0, 0, 0);
             metinYazi = Yazi("Metin", alt.transform, 30, Color.white, TextAnchor.UpperLeft);
-            Konum(metinYazi.rectTransform, 0.02f, 0.5f, 0.98f, 0.88f, 0, 0, 0, 0);
+            Konum(metinYazi.rectTransform, 0.035f, 0.5f, 0.965f, 0.80f, 0, 0, 0, 0);
 
             var sk = Bos("Secenekler", alt.transform);
             secenekKap = (RectTransform)sk.transform;
-            Konum(secenekKap, 0.02f, 0.2f, 0.7f, 0.52f, 0, 0, 0, 0);
+            Konum(secenekKap, 0.035f, 0.22f, 0.70f, 0.52f, 0, 0, 0, 0);
             var vl = sk.AddComponent<VerticalLayoutGroup>();
             vl.spacing = 8; vl.childControlHeight = true; vl.childControlWidth = true;
             vl.childForceExpandHeight = true; vl.childForceExpandWidth = true;
 
+            ipucuKutu = Yuz("IpucuKutu", alt.transform, Hex("000000", 0));
+            Konum(ipucuKutu.rectTransform, 0.72f, 0.5f, 0.975f, 0.90f, 0, 0, 0, 0);
+            Kaplama(ipucuKutu, "ipucu_kutusu_9slice", Hex("1B2A33"));
+            linKutu = Yuz("LinKutu", alt.transform, Hex("000000", 0));
+            Konum(linKutu.rectTransform, 0.72f, 0.22f, 0.975f, 0.5f, 0, 0, 0, 0);
+            Kaplama(linKutu, "ipucu_kutusu_9slice", Hex("2A1B33"));
+            if (linKutu.sprite != null) linKutu.color = new Color(0.85f, 0.7f, 1f, 1f);
             tepkiYazi = Yazi("Tepki", alt.transform, 26, Kirmizi, TextAnchor.UpperLeft);
-            Konum(tepkiYazi.rectTransform, 0.02f, 0.02f, 0.7f, 0.2f, 0, 0, 0, 0);
+            Konum(tepkiYazi.rectTransform, 0.035f, 0.10f, 0.70f, 0.22f, 0, 0, 0, 0);
             ipucuYazi = Yazi("Ipucu", alt.transform, 24, Mavi, TextAnchor.UpperLeft);
-            Konum(ipucuYazi.rectTransform, 0.72f, 0.5f, 0.99f, 0.88f, 0, 0, 0, 0);
+            Konum(ipucuYazi.rectTransform, 0.73f, 0.52f, 0.965f, 0.88f, 0, 0, 0, 0);
             linYazi = Yazi("Lin", alt.transform, 24, Mor, TextAnchor.UpperLeft);
-            Konum(linYazi.rectTransform, 0.72f, 0.2f, 0.99f, 0.5f, 0, 0, 0, 0);
+            Konum(linYazi.rectTransform, 0.73f, 0.24f, 0.965f, 0.48f, 0, 0, 0, 0);
 
             devamBtn = Dugme("Devam", alt.transform, "Devam ▶ (Boşluk)", Turuncu, out devamYazi);
-            Konum((RectTransform)devamBtn.transform, 0.72f, 0.02f, 0.99f, 0.17f, 0, 0, 0, 0);
+            Konum((RectTransform)devamBtn.transform, 0.72f, 0.10f, 0.975f, 0.21f, 0, 0, 0, 0);
             devamBtn.onClick.AddListener(() => { if (aktif != null && aktif.tip == AdimTipi.Etkilesim && !y.Ilerlenebilir) y.EtkilesimTamamlandi(aktif.nesne); else y.Ilerle(); });
             Text t2;
             ipucuBtn = Dugme("IpucuBtn", alt.transform, "İpucu (H)", Hex("2F6F8F"), out t2);
-            Konum((RectTransform)ipucuBtn.transform, 0.58f, 0.02f, 0.71f, 0.17f, 0, 0, 0, 0);
+            Konum((RectTransform)ipucuBtn.transform, 0.58f, 0.10f, 0.71f, 0.21f, 0, 0, 0, 0);
             ipucuBtn.onClick.AddListener(() => y.IpucuIste());
             Text t3;
             var menuBtn = Dugme("MenuBtn", ust.transform, "Menü", Hex("3A3036"), out t3);
@@ -155,6 +177,7 @@ namespace KizilTohum
             kartPaneli = Yuz("KartPaneli", kok, Hex("000000", 0.75f)).gameObject;
             Doldur((RectTransform)kartPaneli.transform);
             var kart = Yuz("Kart", kartPaneli.transform, Hex("221B20"));
+            Kaplama(kart, "kavram_karti_cercevesi_9slice", Hex("221B20"));
             Konum(kart.rectTransform, 0.25f, 0.2f, 0.75f, 0.8f, 0, 0, 0, 0);
             kartBaslik = Yazi("KartBaslik", kart.transform, 40, Sari, TextAnchor.UpperCenter);
             Konum(kartBaslik.rectTransform, 0.03f, 0.8f, 0.97f, 0.97f, 0, 0, 0, 0);
@@ -167,7 +190,8 @@ namespace KizilTohum
             kartPaneli.SetActive(false);
 
             // son ekranı
-            sonEkrani = Yuz("SonEkrani", kok, Hex("0C0A0C", 0.96f)).gameObject;
+            sonZemin = Yuz("SonEkrani", kok, Hex("0C0A0C", 0.96f));
+            sonEkrani = sonZemin.gameObject;
             Doldur((RectTransform)sonEkrani.transform);
             sonYazi = Yazi("SonYazi", sonEkrani.transform, 32, Color.white, TextAnchor.UpperCenter);
             Konum(sonYazi.rectTransform, 0.1f, 0.2f, 0.9f, 0.95f, 0, 0, 0, 0);
@@ -178,13 +202,24 @@ namespace KizilTohum
             sonEkrani.SetActive(false);
 
             // menü
-            menu = Yuz("Menu", kok, Hex("0C0A0C", 0.98f)).gameObject;
+            menuZemin = Yuz("Menu", kok, Hex("0C0A0C", 0.98f));
+            menu = menuZemin.gameObject;
+            var kapak = Spr("Menu/kapak_arka_plan");
+            if (kapak != null) { menuZemin.sprite = kapak; menuZemin.color = new Color(0.55f, 0.55f, 0.55f, 1f); }
             Doldur((RectTransform)menu.transform);
             var baslik = Yazi("MenuBaslik", menu.transform, 90, Turuncu, TextAnchor.MiddleCenter);
             baslik.text = "KIZIL TOHUM";
+            var logo = Spr("Menu/logo_kizil_tohum");
+            if (logo != null)
+            {
+                var li = Yuz("Logo", menu.transform, Color.white);
+                li.sprite = logo; li.preserveAspect = true; li.raycastTarget = false;
+                Konum(li.rectTransform, 0.2f, 0.74f, 0.8f, 0.96f, 0, 0, 0, 0);
+                baslik.text = "";
+            }
             Konum(baslik.rectTransform, 0.1f, 0.78f, 0.9f, 0.96f, 0, 0, 0, 0);
             var alti = Yazi("MenuAlti", menu.transform, 30, Mavi, TextAnchor.MiddleCenter);
-            alti.text = "TYT Biyoloji · Umut-1 Mars Kolonisi";
+            alti.text = Resources.Load<Sprite>("Gorseller/Menu/logo_kizil_tohum") != null ? "Umut-1 Mars Kolonisi" : "TYT Biyoloji · Umut-1 Mars Kolonisi";
             Konum(alti.rectTransform, 0.1f, 0.7f, 0.9f, 0.78f, 0, 0, 0, 0);
 
             MenuDugme("Yeni Oyun", 0.58f, () => { oyun.YeniOyun(); Uygula(); Goster(false); });
@@ -247,6 +282,22 @@ namespace KizilTohum
             y.GorevBitti += g => { };
         }
 
+        void PortreSec(string konusan, string durum)
+        {
+            string ad = null;
+            if (!string.IsNullOrEmpty(konusan))
+            {
+                string k = konusan.ToLowerInvariant();
+                if (k.Contains("ada")) ad = "Portreler/" + (durum == "yanlis" ? "ada_endiseli" : durum == "dogru" ? "ada_gulumseyen" : "ada_dusunceli");
+                else if (k.Contains("okan")) ad = "Portreler/" + (durum == "yanlis" ? "okan_sert" : "okan_notr");
+                else if (k.Contains("lin")) ad = "Portreler/lin_portre";
+                else if (k.Contains("tohum")) ad = "Mercek/" + (durum == "yanlis" ? "mercek_uyari" : "mercek_normal");
+            }
+            Sprite sp = ad != null ? Resources.Load<Sprite>("Gorseller/" + ad) : null;
+            portre.gameObject.SetActive(sp != null);
+            if (sp != null) portre.sprite = sp;
+        }
+
         void DuvarCiz(int v)
         {
             duvarYazi.text = "Tohum Duvarı  " + v + "/100";
@@ -264,10 +315,12 @@ namespace KizilTohum
             gorevBaslik.text = s.gorev.id + " · " + s.gorev.baslik + "   (" + s.adimNo + "/" + s.toplamAdim + ")";
             konusanYazi.text = string.IsNullOrEmpty(s.adim.konusan) ? "" : s.adim.konusan;
             metinYazi.text = s.adim.metin ?? "";
+            PortreSec(s.adim.konusan, null);
             tepkiYazi.text = ""; ipucuYazi.text = ""; linYazi.text = "";
             if (!string.IsNullOrEmpty(s.adim.gorsel))
             {
-                var spr = Resources.Load<Sprite>("Gorseller/" + s.adim.gorsel);
+                var spr = Resources.Load<Sprite>("Gorseller/Sahneler/" + s.adim.gorsel);
+                if (spr == null) spr = Resources.Load<Sprite>("Gorseller/" + s.adim.gorsel);
                 if (spr != null) { sahne.sprite = spr; sahne.color = Color.white; }
                 else { sahne.sprite = null; sahne.color = Hex("2A2226"); }
             }
@@ -307,6 +360,8 @@ namespace KizilTohum
                 Text t;
                 var b = Dugme("Sec" + idx, secenekKap, (idx + 1) + ") " + so.metin, Hex("2B2428"), out t);
                 t.fontSize = 26; t.alignment = TextAnchor.MiddleLeft;
+                Kaplama(b.image, "secenek_butonu_normal_9slice", Hex("2B2428"));
+                t.rectTransform.offsetMin = new Vector2(24, 0);
                 b.onClick.AddListener(() => y.CevapVer(idx));
                 b.interactable = !so.elendi;
                 secBtn.Add(b);
@@ -319,7 +374,16 @@ namespace KizilTohum
             {
                 var so = s.secenekler[i];
                 secBtn[i].interactable = !so.elendi && !s.ilerlenebilir;
+                if (so.elendi) SecDurum(i, "secenek_butonu_elenmis_9slice", Hex("3A3A3A"));
             }
+        }
+
+        void SecDurum(int idx, string sprAd, Color yedek)
+        {
+            if (idx < 0 || idx >= secBtn.Count) return;
+            var im = secBtn[idx].image;
+            var s = Spr("Arayuz/" + sprAd);
+            if (s != null) { im.sprite = s; im.color = Color.white; } else im.color = yedek;
         }
 
         void CevapGoster(CevapSonucu c)
@@ -329,7 +393,8 @@ namespace KizilTohum
             {
                 tepkiYazi.color = Yesil;
                 tepkiYazi.text = string.IsNullOrEmpty(c.tepki) ? "Doğru!" : c.tepki;
-                if (c.secilenIndeks >= 0 && c.secilenIndeks < secBtn.Count) secBtn[c.secilenIndeks].image.color = Hex("1E6B45");
+                if (aktif != null) PortreSec(aktif.konusan, "dogru");
+                SecDurum(c.secilenIndeks, "secenek_butonu_uzerinde_9slice", Hex("1E6B45"));
             }
             else
             {
@@ -337,7 +402,8 @@ namespace KizilTohum
                 string e = string.IsNullOrEmpty(c.tepki) ? "Bu doğru değil." : c.tepki;
                 if (c.ceza > 0) e += "  (−" + c.ceza + ")";
                 tepkiYazi.text = e;
-                if (c.secilenIndeks >= 0 && c.secilenIndeks < secBtn.Count) secBtn[c.secilenIndeks].image.color = Hex("6B1E1E");
+                if (aktif != null) PortreSec(aktif.konusan, "yanlis");
+                SecDurum(c.secilenIndeks, "secenek_butonu_yanlis_9slice", Hex("6B1E1E"));
             }
         }
 
@@ -356,6 +422,15 @@ namespace KizilTohum
             {
                 var o = s.osmoz;
                 float w = 240f;
+                var hs = Resources.Load<Sprite>("Gorseller/Hucre/hucre_" + o.durum);
+                if (hs != null)
+                {
+                    var hi = Yuz("Hucre", simKap, Color.white);
+                    hi.sprite = hs; hi.preserveAspect = true; hi.raycastTarget = false;
+                    Konum(hi.rectTransform, 0.5f, 0.64f, 0.5f, 0.64f, -170, -110, 170, 110);
+                    simYazi.text = "Dış/iç derişim: " + o.oran.ToString("0.00") + " · " + o.cumle + (s.hedefeUlasti ? "\n✓ Hedefe ulaştın!" : "");
+                    return;
+                }
                 // çeper (sabit)
                 var cep = Yuz("Cep", simKap, Hex("5D8F3A"));
                 Konum(cep.rectTransform, 0.5f, 0.64f, 0.5f, 0.64f, -w / 2, -w / 2, w / 2, w / 2);
@@ -391,6 +466,8 @@ namespace KizilTohum
                     bool d = System.Array.IndexOf(s.direncliIndeksler, i) >= 0;
                     float x = 0.1f + (i % 8) * 0.1f, yy = 0.55f - (i / 8) * 0.27f;
                     var f = Yuz("F" + i, simKap, d ? Yesil : Hex("6B8F5A"));
+                    var fs = Resources.Load<Sprite>("Gorseller/Sprite/" + (d ? "fide_direncli" : "fide_lekeli"));
+                    if (fs != null) { f.sprite = fs; f.color = Color.white; f.preserveAspect = true; }
                     Konum(f.rectTransform, x, yy, x + 0.08f, yy + 0.22f, 0, 0, 0, 0);
                 }
                 simYazi.text = "Dirençli fide: " + s.direncliIndeksler.Length + "/" + s.toplamFide + (string.IsNullOrEmpty(s.notMetni) ? "" : " · " + s.notMetni);
@@ -413,6 +490,8 @@ namespace KizilTohum
         void SonGoster(OyunSonu o)
         {
             sonEkrani.SetActive(true);
+            var sz = (o.son != null && !string.IsNullOrEmpty(o.son.gorsel)) ? Spr("Sahneler/" + o.son.gorsel) : null;
+            if (sz != null) { sonZemin.sprite = sz; sonZemin.color = new Color(0.45f, 0.45f, 0.45f, 1f); }
             string m = o.son != null ? o.son.ad + "\n\n" + o.son.metin : "";
             m += "\n\nTohum Duvarı: " + o.saglik + "/100";
             m += "\nKavram kartları: " + o.kartlar.Count + "/14";
@@ -421,6 +500,15 @@ namespace KizilTohum
         }
 
         // ---------- yapı taşları ----------
+        static Sprite Spr(string yol) { return Resources.Load<Sprite>("Gorseller/" + yol); }
+
+        void Kaplama(Image im, string ad, Color yedek)
+        {
+            var s = Spr("Arayuz/" + ad);
+            if (s != null) { im.sprite = s; im.type = Image.Type.Sliced; im.color = Color.white; }
+            else im.color = yedek;
+        }
+
         GameObject Bos(string ad, Transform ata)
         {
             var g = new GameObject(ad, typeof(RectTransform));
@@ -481,6 +569,8 @@ namespace KizilTohum
             var s = kok.AddComponent<Slider>();
             s.fillRect = dolgu.rectTransform;
             s.handleRect = tut.rectTransform;
+            var ts = Spr("Arayuz/kaydirici_tutamaci");
+            if (ts != null) { tut.sprite = ts; tut.color = Color.white; tut.preserveAspect = true; tut.rectTransform.anchorMin = new Vector2(0, 0); tut.rectTransform.anchorMax = new Vector2(0, 1); tut.rectTransform.sizeDelta = new Vector2(70, 0); }
             s.targetGraphic = tut;
             s.direction = Slider.Direction.LeftToRight;
             return s;
