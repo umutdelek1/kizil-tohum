@@ -57,6 +57,7 @@ namespace KizilTohum.Editor
         // ---------- kurulum / bitiş ----------
         static void Kur()
         {
+            KizilTohumArayuz.GorevKapagiKapali = true;   // açılış kapağı diğer çekimlere karışmasın
             SessionState.SetBool(Bayrak, false);
             klasor = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "KizilTohum_Ekranlar");
             Directory.CreateDirectory(klasor);
@@ -84,7 +85,7 @@ namespace KizilTohum.Editor
         static void Bitir(string neden)
         {
             if (akis == null) return;
-            akis = null;
+            akis = null; KizilTohumArayuz.GorevKapagiKapali = false;
             EditorApplication.update -= Guncelle;
             Application.logMessageReceivedThreaded -= KayitGeldi;
             // oyuncunun kaydını ve ilerlemesini geri yaz
@@ -374,6 +375,30 @@ namespace KizilTohum.Editor
                 }
             }
 
+            // m) KT04-7 (mikroskop içi), görev açılış kapağı, yarım sera finali
+            Cagir("VideoIptal");
+            Cagir("GorevAc", "KT04");
+            yield return 0.5f;
+            Cagir("VideoIptal");
+            foreach (var x in Gec(a => a.id == "KT04-7")) yield return x;
+            yield return 2.6f; KartKapat();
+            Cek("31_kt04_7");
+            yield return 0.4f;
+            Cagir("GorevAc", "KT01");
+            yield return 0.5f;
+            Cagir("VideoIptal");
+            foreach (var x in Gec(a => a.id == "KT01-2")) yield return x;
+            yield return 2.6f; KartKapat();
+            Cek("33_kt01_2");
+            yield return 0.4f;
+            KizilTohumArayuz.GorevKapagiKapali = false;
+            Cagir("GorevAc", "KT08");
+            yield return 1.2f;
+            Cek("32_gorev_kapagi_kt08");
+            yield return 0.4f;
+            KizilTohumArayuz.GorevKapagiKapali = true;
+            Cagir("VideoIptal");
+
             // k) final ekranı (en iyi son: final_fidan_3d) ve Bekçi Defteri
             var ic = Yonetici.Icerik;
             var son = new OyunSonu { son = ic.sonlar[0], saglik = 100 };
@@ -384,6 +409,10 @@ namespace KizilTohum.Editor
             Cagir("SonGoster", new OyunSonu { son = ic.sonlar[2], saglik = 40 });
             yield return 1.5f;
             Cek("23_final_tek_cekmece");
+            yield return 0.4f;
+            Cagir("SonGoster", new OyunSonu { son = ic.sonlar[1], saglik = 70 });
+            yield return 1.5f;
+            Cek("24_final_yarim_sera");
             yield return 0.4f;
             Cagir("GorevAc", "KT01");
             yield return 0.4f;

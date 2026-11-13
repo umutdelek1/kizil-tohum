@@ -80,6 +80,7 @@ namespace KizilTohum
             sonraki = DugmeYap("Sonraki", "›", 0.84f, 0.30f, 0.90f, 0.37f);
             onceki.onClick.AddListener(() => { sayfa = Mathf.Max(0, sayfa - 1); Ciz(); });
             sonraki.onClick.AddListener(() => { sayfa++; Ciz(); });
+            IkonKoy(geri, "ikon_geri"); IkonKoy(onceki, "ikon_geri"); IkonKoy(sonraki, "ikon_ileri");
             sayfaYazi = Yazi("SayfaNo", kok, Tema.YaziKucuk, Tema.Beyaz, TextAnchor.MiddleCenter, fontKalin);
             Konum(sayfaYazi.rectTransform, 0.78f, 0.30f, 0.84f, 0.37f);
 
@@ -136,6 +137,29 @@ namespace KizilTohum
                 m.text = k.metin;
                 Konum(m.rectTransform, 0f, 0f, 1f, 0.74f);
                 m.rectTransform.offsetMin = new Vector2(14f, 6f); m.rectTransform.offsetMax = new Vector2(-14f, 0f);
+            }
+        }
+
+        // düğme yazısını ikonla değiştirir (ikon yoksa yazı kalır)
+        static void IkonKoy(Button b, string ad)
+        {
+            var sp = Resources.Load<Sprite>("Gorseller/Ikonlar/" + ad);
+            if (sp == null) return;
+            var yz = b.GetComponentInChildren<Text>();
+            bool yaziVar = yz != null && ad == "ikon_geri" && yz.text.Length > 2;   // "‹ Geri": ikon + yazı
+            var g = new GameObject("Ikon", typeof(RectTransform)); g.transform.SetParent(b.transform, false);
+            var im = g.AddComponent<Image>(); im.sprite = sp; im.preserveAspect = true; im.raycastTarget = false;
+            var r = im.rectTransform;
+            if (yaziVar)
+            {
+                r.anchorMin = r.anchorMax = new Vector2(0f, 0.5f); r.pivot = new Vector2(0f, 0.5f);
+                r.sizeDelta = new Vector2(Tema.IkonKucuk, Tema.IkonKucuk); r.anchoredPosition = new Vector2(18f, 0f);
+                yz.text = "Geri"; yz.rectTransform.offsetMin = new Vector2(18f + Tema.IkonKucuk, 0f);
+            }
+            else
+            {
+                r.anchorMin = r.anchorMax = new Vector2(0.5f, 0.5f); r.sizeDelta = new Vector2(Tema.IkonKucuk, Tema.IkonKucuk);
+                if (yz != null) yz.text = "";
             }
         }
 

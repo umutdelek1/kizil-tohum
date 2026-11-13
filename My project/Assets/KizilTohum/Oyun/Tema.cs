@@ -149,6 +149,8 @@ namespace KizilTohum
         // ---------- ikonlar ----------
         public const float IkonMenu = 48f;
         public const float IkonKucuk = 40f;
+        public const float KapakGiris = 0.4f;   // görev açılış kapağı: solma süresi
+        public const float KapakSure = 2.2f;    // tam görünür kalma bitişi (tıklayınca buraya atlar)
 
         // ---------- koloni haritası ----------
         public static readonly Color Kehribar = Hex("FFB347");

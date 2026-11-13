@@ -74,7 +74,7 @@ namespace KizilTohum
         Font font, fontKalin, fontBaslik;
         RectTransform kok, dunya, bilgi;
         Image arkaA, arkaB, karart;
-        Image bilgiIkon;
+        Image bilgiIkon, bilgiKart;
         Text sayac, bilgiYer, bilgiGorev;
         Canvas canvas;
         readonly List<Nokta> noktalar = new List<Nokta>();
@@ -125,6 +125,13 @@ namespace KizilTohum
             bilgiIkon.rectTransform.sizeDelta = new Vector2(Tema.IkonMenu, Tema.IkonMenu);
             bilgiIkon.rectTransform.anchoredPosition = new Vector2(Tema.MetinSag - 8f, 0f);
             bilgiIkon.enabled = false;
+            bilgiKart = Yuz("DosyaKapak", bilgi, Color.white);   // görev dosya kapağı küçük resmi (sağ uç)
+            bilgiKart.preserveAspect = true; bilgiKart.raycastTarget = false;
+            bilgiKart.rectTransform.anchorMin = new Vector2(1f, 0.1f); bilgiKart.rectTransform.anchorMax = new Vector2(1f, 0.9f);
+            bilgiKart.rectTransform.pivot = new Vector2(1f, 0.5f);
+            bilgiKart.rectTransform.sizeDelta = new Vector2(Tema.HaritaBilgiYukseklik * 0.8f * 1.39f, 0f);
+            bilgiKart.rectTransform.anchoredPosition = new Vector2(-14f, 0f);
+            bilgiKart.enabled = false;
             bilgiYer = Yazi("Yer", bilgi, Tema.YaziOrta, Tema.Konusan, TextAnchor.MiddleLeft, fontKalin);
             Konum(bilgiYer.rectTransform, 0, 0.5f, 1, 0.9f, Tema.MetinSag, 0, -Tema.MetinSag, 0);
             bilgiGorev = Yazi("Gorev", bilgi, Tema.YaziKucuk, Tema.Beyaz, TextAnchor.MiddleLeft, font);
@@ -415,6 +422,12 @@ namespace KizilTohum
             float solBosluk = isp != null ? Tema.MetinSag + Tema.IkonMenu : Tema.MetinSag;
             bilgiYer.rectTransform.offsetMin = new Vector2(solBosluk, 0f);
             bilgiGorev.rectTransform.offsetMin = new Vector2(solBosluk, 0f);
+            string kd = n.durum == Durum.Kilitli ? null : n.t.gorevId == "KT01" ? "dosya_yuz_cekmece_kart" : n.t.gorevId == "KT04" ? "dosya_susuzluk_kart" : n.t.gorevId == "KT08" ? "dosya_kirk_yedi_kart" : null;
+            var ksp = kd != null ? Spr("Dosyalar/" + kd) : null;
+            bilgiKart.sprite = ksp; bilgiKart.enabled = ksp != null;
+            float sagBosluk = ksp != null ? bilgiKart.rectTransform.sizeDelta.x + 24f : Tema.MetinSag;
+            bilgiYer.rectTransform.offsetMax = new Vector2(-sagBosluk, 0f);
+            bilgiGorev.rectTransform.offsetMax = new Vector2(-sagBosluk, 0f);
             if (n.durum == Durum.Kilitli) { bilgiGorev.text = Tema.HaritaKapaliMetni; bilgiGorev.color = Tema.Soluk; }
             else
             {
