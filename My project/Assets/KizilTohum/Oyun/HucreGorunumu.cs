@@ -21,8 +21,9 @@ namespace KizilTohum
 
         class Etiket
         {
-            public RectTransform yazi, cizgi;
-            public Vector2 yaziKonum, hedef;
+            public RectTransform yazi, cizgi, nokta;
+            public Vector2 yaziKonum;
+            public Vector2[] hedefler;   // izotonik, turgor, plazmoliz (sol-üst orijinli)
         }
 
         RectTransform kutu, govde;
@@ -73,9 +74,9 @@ namespace KizilTohum
             }
 
             // etiketler hücrenin dışında (kenar boşluğunda), çizgiler hücre silüetinin dışında biter
-            EtiketEkle("Hücre duvarı", new Vector2(0.03f, 0.30f), new Vector2(0.20f, 0.40f), font);
-            EtiketEkle("Hücre zarı", new Vector2(0.03f, 0.82f), new Vector2(0.33f, 0.77f), font);
-            EtiketEkle("Vakuol", new Vector2(0.33f, 0.99f), new Vector2(0.45f, 0.94f), font);
+            EtiketEkle("Hücre duvarı", new Vector2(0.03f, 0.30f), Tema.HucreHedefDuvar, font);
+            EtiketEkle("Hücre zarı", new Vector2(0.03f, 0.82f), Tema.HucreHedefZar, font);
+            EtiketEkle("Vakuol", new Vector2(0.33f, 0.99f), Tema.HucreHedefVakuol, font);
         }
 
         Image Katman(string ad, Sprite s)
@@ -87,13 +88,17 @@ namespace KizilTohum
             return im;
         }
 
-        void EtiketEkle(string metin, Vector2 yaziKonum, Vector2 hedef, Font font)
+        void EtiketEkle(string metin, Vector2 yaziKonum, Vector2[] hedefler, Font font)
         {
-            var e = new Etiket { yaziKonum = yaziKonum, hedef = hedef };
+            var e = new Etiket { yaziKonum = yaziKonum, hedefler = hedefler };
             var cz = Bos("Cizgi", kutu).AddComponent<Image>();
             cz.color = Tema.HucreEtiketCizgi; cz.raycastTarget = false;
             e.cizgi = cz.rectTransform;
-            e.cizgi.anchorMin = e.cizgi.anchorMax = hedef;
+            e.cizgi.anchorMin = e.cizgi.anchorMax = Hedef(e);
+            var nk = Bos("Nokta", kutu).AddComponent<Image>();
+            nk.sprite = Disk(); nk.color = Tema.Beyaz; nk.raycastTarget = false;
+            e.nokta = nk.rectTransform;
+            e.nokta.sizeDelta = new Vector2(Tema.HucreNoktaBoyu, Tema.HucreNoktaBoyu);
             e.cizgi.pivot = new Vector2(0f, 0.5f);   // hedefte başlar, yazıya doğru döner
             var t = Bos("Etiket", kutu).AddComponent<Text>();
             t.font = font; t.fontSize = Tema.YaziKucuk; t.color = Tema.Beyaz; t.raycastTarget = false;
@@ -152,11 +157,37 @@ namespace KizilTohum
             for (int i = 0; i < etiketler.Count; i++)
             {
                 var e = etiketler[i];
-                Vector2 fark = Vector2.Scale(e.yaziKonum - e.hedef, boy);
+                Vector2 hedef = Hedef(e);
+                e.cizgi.anchorMin = e.cizgi.anchorMax = hedef;
+                e.nokta.anchorMin = e.nokta.anchorMax = hedef; e.nokta.anchoredPosition = Vector2.zero;
+                Vector2 fark = Vector2.Scale(e.yaziKonum - hedef, boy);
                 e.cizgi.sizeDelta = new Vector2(fark.magnitude, 2f);
                 e.cizgi.anchoredPosition = Vector2.zero;
                 e.cizgi.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(fark.y, fark.x) * Mathf.Rad2Deg);
             }
+        }
+
+        // Hedef nokta: durum ağırlıklarıyla (wT, wP: 0.8 sn'de kayan) hedefler arası; y yukarı doğru olacak şekilde çevrilir.
+        Vector2 Hedef(Etiket e)
+        {
+            Vector2 p = e.hedefler[0] + wT * (e.hedefler[1] - e.hedefler[0]) + wP * (e.hedefler[2] - e.hedefler[0]);
+            return new Vector2(p.x, 1f - p.y);
+        }
+
+        static Sprite disk;
+        static Sprite Disk()
+        {
+            if (disk != null) return disk;
+            const int n = 32;
+            var tex = new Texture2D(n, n, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Clamp; tex.filterMode = FilterMode.Bilinear;
+            var c = new Vector2(n * 0.5f, n * 0.5f);
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Clamp01(n * 0.5f - 1f - Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), c) + 0.5f)));
+            tex.Apply();
+            disk = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f);
+            return disk;
         }
 
         void Uygula()

@@ -192,6 +192,12 @@ namespace KizilTohum
         public const float HucreParcacikDengeAlfa = 0.25f;
         public static readonly Color HucreSu = new Color(0.88f, 1f, 0.9f, 0.75f);   // saydam beyaz-yeşil (mavi değil)
         public static readonly Color HucreEtiketCizgi = new Color(1f, 1f, 1f, 0.7f);
+        public const float HucreNoktaBoyu = 6f;                   // etiket çizgisi ucundaki nokta
+        // Etiket hedefleri: hücre görselinin normalize koordinatları (0..1, sol-üst orijin, 1920x1071 çerçevesi).
+        // Sıra: izotonik, turgor, plazmoliz. Durum geçişinde uç 0.8 sn'de yeni hedefe kayar (HucreGecisSure).
+        public static readonly Vector2[] HucreHedefVakuol = { new Vector2(0.45f, 0.45f), new Vector2(0.45f, 0.45f), new Vector2(0.41f, 0.45f) };
+        public static readonly Vector2[] HucreHedefDuvar = { new Vector2(0.19f, 0.58f), new Vector2(0.19f, 0.58f), new Vector2(0.19f, 0.58f) };
+        public static readonly Vector2[] HucreHedefZar = { new Vector2(0.27f, 0.43f), new Vector2(0.27f, 0.43f), new Vector2(0.245f, 0.45f) };
         public static readonly Vector2 HucreMerkez = new Vector2(0.51f, 0.48f);    // görsel içinde (sol alt 0,0)
         public static readonly Vector2 HucreYaricap = new Vector2(0.33f, 0.42f);
 
