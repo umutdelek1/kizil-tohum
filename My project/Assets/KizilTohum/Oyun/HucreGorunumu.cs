@@ -40,8 +40,9 @@ namespace KizilTohum
             var go = new GameObject("HucreGorunumu", typeof(RectTransform));
             go.transform.SetParent(ata, false);
             var kok = (RectTransform)go.transform;
-            kok.anchorMin = kok.anchorMax = new Vector2(0.5f, 0.64f);
-            kok.sizeDelta = new Vector2(Tema.HucreKutuGenislik, Tema.HucreKutuYukseklik);
+            kok.anchorMin = new Vector2(0f, Tema.HucreAltSinir);   // panelin yüksekliğine yayılır; en-boy oranı kutuda korunur
+            kok.anchorMax = new Vector2(1f, 1f);
+            kok.offsetMin = Vector2.zero; kok.offsetMax = new Vector2(0f, -8f);
             var h = go.AddComponent<HucreGorunumu>();
             h.Olustur(si, Resources.Load<Sprite>("Gorseller/Hucre/hucre_turgor"), Resources.Load<Sprite>("Gorseller/Hucre/hucre_plazmoliz"), font);
             return h;
@@ -71,9 +72,10 @@ namespace KizilTohum
                 parcaciklar.Add(new Parcacik { r = r, im = im, aci = Random.value * Mathf.PI * 2f, faz = Random.value, hiz = Random.Range(0.75f, 1.25f) });
             }
 
-            EtiketEkle("Hücre duvarı", new Vector2(0.00f, 0.20f), new Vector2(0.215f, 0.42f), font);
-            EtiketEkle("Hücre zarı", new Vector2(0.00f, 0.82f), new Vector2(0.255f, 0.60f), font);
-            EtiketEkle("Vakuol", new Vector2(0.30f, 1.00f), new Vector2(0.44f, 0.56f), font);
+            // etiketler hücrenin dışında (kenar boşluğunda), çizgiler hücre silüetinin dışında biter
+            EtiketEkle("Hücre duvarı", new Vector2(0.03f, 0.30f), new Vector2(0.20f, 0.40f), font);
+            EtiketEkle("Hücre zarı", new Vector2(0.03f, 0.82f), new Vector2(0.33f, 0.77f), font);
+            EtiketEkle("Vakuol", new Vector2(0.33f, 0.99f), new Vector2(0.45f, 0.94f), font);
         }
 
         Image Katman(string ad, Sprite s)
@@ -92,7 +94,7 @@ namespace KizilTohum
             cz.color = Tema.HucreEtiketCizgi; cz.raycastTarget = false;
             e.cizgi = cz.rectTransform;
             e.cizgi.anchorMin = e.cizgi.anchorMax = hedef;
-            e.cizgi.pivot = new Vector2(0f, 0.5f);
+            e.cizgi.pivot = new Vector2(0f, 0.5f);   // hedefte başlar, yazıya doğru döner
             var t = Bos("Etiket", kutu).AddComponent<Text>();
             t.font = font; t.fontSize = Tema.YaziKucuk; t.color = Tema.Beyaz; t.raycastTarget = false;
             t.alignment = TextAnchor.MiddleLeft;
@@ -101,7 +103,8 @@ namespace KizilTohum
             t.gameObject.AddComponent<Shadow>().effectColor = Tema.Orten;
             e.yazi = t.rectTransform;
             e.yazi.anchorMin = e.yazi.anchorMax = yaziKonum;
-            e.yazi.pivot = new Vector2(0f, 0.5f);
+            e.yazi.pivot = new Vector2(1f, 0.5f);   // yazı konumdan sola doğru uzar, çizgi yazının sağ ucundan çıkar
+            t.alignment = TextAnchor.MiddleRight;
             e.yazi.sizeDelta = new Vector2(200f, 30f);
             etiketler.Add(e);
         }

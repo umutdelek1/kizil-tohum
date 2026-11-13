@@ -204,8 +204,9 @@ namespace KizilTohum
             // alt panel
             var alt = Yuz("Alt", oyunEkrani.transform, Tema.Panel);
             Kaplama(alt, "diyalog_paneli_9slice", Tema.Panel);
-            Konum(alt.rectTransform, 0, 0, 1, 0.46f, 0, 0, 0, 0);
             altRect = alt.rectTransform;
+            altRect.anchorMin = new Vector2(0f, 0f); altRect.anchorMax = new Vector2(1f, 0f); altRect.pivot = new Vector2(0.5f, 0f);
+            altRect.sizeDelta = new Vector2(0f, Tema.DiyalogOran * 1080f);
             altGrup = alt.gameObject.AddComponent<CanvasGroup>();
             var altTik = alt.gameObject.AddComponent<Button>(); // panele tıklayınca daktilo hemen tamamlanır
             altTik.transition = Selectable.Transition.None;
@@ -219,15 +220,15 @@ namespace KizilTohum
             konusanYazi = Yazi("Konusan", alt.transform, Tema.YaziOrta, Tema.Konusan, TextAnchor.UpperLeft);
             konusanYazi.font = fontKalin;
             Konum(konusanYazi.rectTransform, 0.04f, 0.76f, 0.6f, 0.87f, 0, 0, 0, 0);
-            metinYazi = Yazi("Metin", alt.transform, Tema.YaziOrta, Tema.Beyaz, TextAnchor.UpperLeft);
+            metinYazi = Yazi("Metin", alt.transform, Tema.YaziBuyuk, Tema.Beyaz, TextAnchor.UpperLeft);   // diyalog metni 32 px
             Konum(metinYazi.rectTransform, 0.04f, 0.50f, 0.96f, 0.77f, 0, 0, 0, 0);
 
             var sk = Bos("Secenekler", alt.transform);
             secenekKap = (RectTransform)sk.transform;
             Konum(secenekKap, 0.035f, 0.22f, 0.70f, 0.52f, 0, 0, 0, 0);
             var vl = sk.AddComponent<VerticalLayoutGroup>();
-            vl.spacing = 8; vl.childControlHeight = true; vl.childControlWidth = true;
-            vl.childForceExpandHeight = true; vl.childForceExpandWidth = true;
+            vl.spacing = Tema.SecenekBosluk; vl.childControlHeight = true; vl.childControlWidth = true;
+            vl.childForceExpandHeight = false; vl.childForceExpandWidth = true;
 
             ipucuKutu = Yuz("IpucuKutu", alt.transform, Tema.Saydam);
             Konum(ipucuKutu.rectTransform, 0.72f, 0.5f, 0.975f, 0.90f, 0, 0, 0, 0);
@@ -257,7 +258,7 @@ namespace KizilTohum
 
             // simülasyon paneli (kaydırıcı, grafik, tablo)
             simPaneli = Yuz("SimPaneli", oyunEkrani.transform, Tema.Sim).gameObject;
-            Konum((RectTransform)simPaneli.transform, 0.05f, 0.48f, 0.95f, 0.9f, 0, 0, 0, 0);
+            Konum((RectTransform)simPaneli.transform, 0.20f, 0.26f, 0.95f, 0.9f, 0, 0, 0, 0);
             simKap = (RectTransform)Bos("SimKap", simPaneli.transform).transform;
             Doldur(simKap);
             simYazi = Yazi("SimYazi", simPaneli.transform, Tema.YaziOrta, Tema.Basari, TextAnchor.LowerCenter);
@@ -272,6 +273,7 @@ namespace KizilTohum
             Doldur((RectTransform)ortu.transform);
             karartGrup = ortu.AddComponent<CanvasGroup>();
             karartGrup.alpha = 0f; karartGrup.blocksRaycasts = false; karartGrup.interactable = false;
+            portre.transform.SetAsLastSibling(); ortu.transform.SetAsLastSibling();   // portre sim panelinin üstünde, geçiş örtüsünün altında
             var siyah = Yuz("Siyah", ortu.transform, Tema.Base);
             siyah.raycastTarget = false;
             Doldur(siyah.rectTransform);
@@ -358,9 +360,6 @@ namespace KizilTohum
                 baslik.text = "";
             }
             Konum(baslik.rectTransform, 0.05f, 0.76f, 0.45f, 0.95f, 0, 0, 0, 0);
-            var alti = Yazi("MenuAlti", menu.transform, Tema.YaziOrta, Tema.Bilgi, TextAnchor.MiddleLeft);
-            alti.text = "TYT Biyoloji · Umut-1 Mars Kolonisi";
-            Konum(alti.rectTransform, 0.055f, 0.60f, 0.40f, 0.67f, 0, 0, 0, 0);
 
             MenuDugme("Yeni Oyun", 0.50f, Tema.YaziOrta, () => { HaritaKayit.Sifirla(); KartKumesi.Sifirla(); oyun.YeniOyun(); HaritaAc(); }); // tüm ilerleme sıfırlanır; harita gündüze döner
             MenuDugme("Devam Et", 0.41f, Tema.YaziOrta, () => { if (oyun.KayitVarMi && oyun.DevamEt()) { Uygula(); Goster(false); } });
@@ -909,6 +908,7 @@ namespace KizilTohum
             bool soruTipi = s.adim.SecenekliMi;
             ipucuBtn.gameObject.SetActive(soruTipi);
             SecenekKur(s);
+            PanelDuzenle(s);
             simPaneli.SetActive(false);
             kaydirici.gameObject.SetActive(false);
             if (s.adim.tip == AdimTipi.Kaydirici)
@@ -930,6 +930,89 @@ namespace KizilTohum
             devamYazi.text = metin;
         }
 
+        // ---------- diyalog paneli yerleşimi ----------
+        const float SecenekSol = 0.035f, SecenekSag = 0.70f;
+
+        float EkranGenislik()
+        {
+            float w = canvas != null ? ((RectTransform)canvas.transform).rect.width : 0f;
+            return w > 100f ? w : 1920f;
+        }
+
+        float EkranYukseklik()
+        {
+            float h = canvas != null ? ((RectTransform)canvas.transform).rect.height : 0f;
+            return h > 100f ? h : 1080f;
+        }
+
+        // Metnin verilen genişlikte (canvas birimi) kaplayacağı yükseklik.
+        static float TextYuk(Text t, string metin, float genislik)
+        {
+            if (string.IsNullOrEmpty(metin)) return 0f;
+            var ayar = t.GetGenerationSettings(new Vector2(Mathf.Max(10f, genislik), 0f));
+            return t.cachedTextGeneratorForLayout.GetPreferredHeight(metin, ayar) / t.pixelsPerUnit;
+        }
+
+        // Üstten piksel ofsetleriyle yerleştirir (panel yüksekliği değişse de yerinde kalır).
+        static void UstKonum(RectTransform r, float ax0, float ax1, float ustPx, float altPx)
+        {
+            r.anchorMin = new Vector2(ax0, 1f); r.anchorMax = new Vector2(ax1, 1f);
+            r.offsetMin = new Vector2(0f, -altPx); r.offsetMax = new Vector2(0f, -ustPx);
+        }
+
+        static void AltKonum(RectTransform r, float ax0, float ax1, float altPx, float yukPx)
+        {
+            r.anchorMin = new Vector2(ax0, 0f); r.anchorMax = new Vector2(ax1, 0f);
+            r.offsetMin = new Vector2(0f, altPx); r.offsetMax = new Vector2(0f, altPx + yukPx);
+        }
+
+        // Panel yüksekliği içeriğe göre: tek satırlık diyalogda ~%22 ekran; seçeneklerde genişler.
+        void PanelDuzenle(AdimSunumu s)
+        {
+            if (altRect == null) return;
+            float cw = EkranGenislik(), ch = EkranYukseklik();
+            float mh = Mathf.Max(TextYuk(metinYazi, s.adim.metin ?? "", cw * 0.92f), Tema.YaziBuyuk * 1.2f);
+            UstKonum(konusanYazi.rectTransform, 0.04f, 0.60f, Tema.PanelUstBosluk, Tema.PanelUstBosluk + Tema.KonusanYuk);
+            UstKonum(metinYazi.rectTransform, 0.04f, 0.96f, Tema.MetinUst, Tema.MetinUst + mh);
+            float h;
+            if (s.adim.SecenekliMi)
+            {
+                float oh = 0f;
+                for (int i = 0; i < secBtn.Count; i++)
+                {
+                    var le = secBtn[i].GetComponent<LayoutElement>();
+                    oh += le != null ? le.preferredHeight : Tema.SecenekMinYuk;
+                    if (i > 0) oh += Tema.SecenekBosluk;
+                }
+                float ot = Tema.MetinUst + mh + Tema.PanelAltBosluk;
+                UstKonum(secenekKap, SecenekSol, SecenekSag, ot, ot + oh);
+                float tt = ot + oh + Tema.SecenekBosluk;
+                UstKonum(tepkiYazi.rectTransform, SecenekSol, 0.56f, tt, tt + Tema.TepkiYuk);
+                h = tt + Tema.TepkiYuk + Tema.PanelAltBosluk;
+            }
+            else
+            {
+                h = Mathf.Max(Tema.DiyalogOran * ch, Tema.MetinUst + mh + Tema.PanelAltBosluk + Tema.AltSatirKenar + Tema.AltSatirYuk);
+                UstKonum(secenekKap, SecenekSol, SecenekSag, Tema.MetinUst, Tema.MetinUst);
+                UstKonum(tepkiYazi.rectTransform, SecenekSol, 0.56f, Tema.MetinUst + mh, Tema.MetinUst + mh + Tema.TepkiYuk);
+            }
+            altRect.sizeDelta = new Vector2(0f, h);
+            // sağ sütun: ipucu ve Lin notu kutuları, alt satırdaki düğmelerin üstünde
+            float a = h - Tema.PanelUstBosluk - (Tema.AltSatirKenar + Tema.AltSatirYuk + Tema.PanelAltBosluk);
+            float orta = Tema.PanelUstBosluk + a * 0.5f;
+            UstKonum(ipucuKutu.rectTransform, 0.72f, 0.975f, Tema.PanelUstBosluk, orta - 4f);
+            UstKonum(ipucuYazi.rectTransform, 0.73f, 0.965f, Tema.PanelUstBosluk + 8f, orta - 12f);
+            UstKonum(linKutu.rectTransform, 0.72f, 0.975f, orta + 4f, Tema.PanelUstBosluk + a);
+            UstKonum(linYazi.rectTransform, 0.73f, 0.965f, orta + 12f, Tema.PanelUstBosluk + a - 8f);
+            AltKonum((RectTransform)devamBtn.transform, 0.72f, 0.975f, Tema.AltSatirKenar, Tema.AltSatirYuk);
+            AltKonum((RectTransform)ipucuBtn.transform, 0.58f, 0.71f, Tema.AltSatirKenar, Tema.AltSatirYuk);
+            // portre panelin üstünde, sim paneli panelin üstünde
+            float oran = h / ch;
+            portre.rectTransform.anchorMin = new Vector2(0.01f, oran); portre.rectTransform.anchorMax = new Vector2(0.20f, oran);
+            var sp = (RectTransform)simPaneli.transform;
+            sp.anchorMin = new Vector2(sp.anchorMin.x, oran + Tema.SimPanelAralik);
+        }
+
         // ---------- seçenekler ----------
         void SecenekKur(AdimSunumu s)
         {
@@ -941,8 +1024,11 @@ namespace KizilTohum
                 int idx = so.indeks;
                 Text t;
                 var b = Dugme("Sec" + idx, secenekKap, (idx + 1) + ") " + so.metin, Tema.Kontrol, out t, "secenek_butonu_normal_9slice");
-                t.fontSize = Tema.YaziKucuk; t.alignment = TextAnchor.MiddleLeft;
+                t.fontSize = Tema.YaziOrta; t.alignment = TextAnchor.MiddleLeft;
                 t.rectTransform.offsetMin = new Vector2(Tema.MetinSol, 0); t.rectTransform.offsetMax = new Vector2(-Tema.MetinSag, 0);
+                float yuk = Mathf.Max(Tema.SecenekMinYuk, TextYuk(t, t.text, EkranGenislik() * (SecenekSag - SecenekSol) - Tema.MetinSol - Tema.MetinSag) + Tema.SecenekYatayDolgu);
+                var le = b.gameObject.AddComponent<LayoutElement>();
+                le.minHeight = yuk; le.preferredHeight = yuk;
                 SpriteDurumlari(b);
                 b.gameObject.AddComponent<CanvasGroup>();
                 b.gameObject.AddComponent<DugmeHareketi>().gecikme = secBtn.Count * Tema.SecenekAralik;

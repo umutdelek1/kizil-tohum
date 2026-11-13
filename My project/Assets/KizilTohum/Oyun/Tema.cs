@@ -121,6 +121,20 @@ namespace KizilTohum
         public const float KartBaslangicOlcek = 0.6f;
         public const float KartBaslangicAci = 8f;
 
+        // ---------- diyalog paneli yerleşimi (canvas birimi, referans 1080 yükseklik) ----------
+        public const float DiyalogOran = 0.22f;          // tek satırlık metinde panel yüksekliği / ekran
+        public const float PanelUstBosluk = 34f;
+        public const float KonusanYuk = 44f;
+        public const float MetinUst = 80f;
+        public const float SecenekMinYuk = 60f;          // 28 px yazıya göre kutu; uzun seçenek kutuyu büyütür
+        public const float SecenekBosluk = 8f;
+        public const float SecenekYatayDolgu = 24f;
+        public const float TepkiYuk = 80f;
+        public const float PanelAltBosluk = 12f;
+        public const float AltSatirYuk = 66f;            // Devam / İpucu düğmeleri
+        public const float AltSatirKenar = 16f;
+        public const float SimPanelAralik = 0.02f;
+
         // ---------- koloni haritası ----------
         public static readonly Color Kehribar = Hex("FFB347");
         public static readonly string[] HaritaResimleri = { "Harita/harita_gunduz", "Harita/harita_gunbatimi", "Harita/harita_gece" }; // 0 / 1 / 2+ tamamlanan görev
@@ -169,8 +183,7 @@ namespace KizilTohum
         public const float HucreGecisSure = 0.8f;                 // izotonik ↔ turgor / plazmoliz çapraz erime
         public const float HucreNefesOlcek = 1f;                  // 1.015 nefes alır; duvar da ölçeklendiği için kapalı (bkz. rapor)
         public const float HucreNefesSure = 3f;
-        public const float HucreKutuGenislik = 580f;
-        public const float HucreKutuYukseklik = 500f;
+        public const float HucreAltSinir = 0.27f;                 // hücre alanı: panelin bu oranından yukarısı (altta yazı ve kaydırıcı)
         public const int HucreParcacikSayisi = 18;
         public const float HucreParcacikBoyu = 14f;
         public const float HucreParcacikHiz = 0.45f;              // tur/sn
