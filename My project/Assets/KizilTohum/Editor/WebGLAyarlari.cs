@@ -12,7 +12,7 @@ namespace KizilTohum.Editor
         public static void Uygula()
         {
             var hedef = NamedBuildTarget.WebGL;
-            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;   // Brotli: .br dosyaları için Dagitim/vercel.json başlıkları gerekir
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;   // sıkıştırma kapalı (Vercel .br dosyalarını çift sıkıştırdığı için Brotli bırakıldı)
             PlayerSettings.WebGL.decompressionFallback = false;
             PlayerSettings.WebGL.dataCaching = true;
             PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.None;         // boyut için

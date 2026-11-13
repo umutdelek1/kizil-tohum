@@ -7,6 +7,9 @@ namespace KizilTohum.Editor
     /// <summary>Resources/Gorseller altındaki PNG'leri otomatik Sprite olarak içe aktarır.</summary>
     public class GorselIceAktarici : AssetPostprocessor
     {
+        /// <summary>Crunch bantlanması görülen dokular (dosya adı, uzantısız) buraya eklenir.</summary>
+        static readonly System.Collections.Generic.HashSet<string> KrunchHaric = new System.Collections.Generic.HashSet<string>();
+
         static string ad0(string yol) { return System.IO.Path.GetFileNameWithoutExtension(yol); }
 
         void OnPreprocessTexture()
@@ -25,6 +28,12 @@ namespace KizilTohum.Editor
             if (yol.Contains("/Gorseller/Madalyalar/")) ti.maxTextureSize = 512;
             if (yol.Contains("/Gorseller/Portreler/") && ad0(yol).EndsWith("_3d")) ti.maxTextureSize = 1024;   // 3D portreler
             ti.compressionQuality = 50; // Normal Quality (WebGL yük boyutu için; Harita/ 1920x1080 sahneleri dahil)
+            // Crunch (indirme boyutu için): ikonlar ve 256 px altı küçük dokular hariç hepsi; alfa kenarında bantlanma olan dokular KrunchHaric'e eklenir
+            bool kucuk = ti.maxTextureSize <= 256;
+            try { int w, h; ti.GetSourceTextureWidthAndHeight(out w, out h); if (Mathf.Max(w, h) <= 256) kucuk = true; } catch { }
+            bool krunch = !yol.Contains("/Gorseller/Ikonlar/") && !kucuk && !KrunchHaric.Contains(ad0(yol));
+            ti.crunchedCompression = krunch;
+            if (krunch) ti.compressionQuality = 75;
             string ad = System.IO.Path.GetFileNameWithoutExtension(assetPath);
             if (ad.EndsWith("_9slice"))
             {

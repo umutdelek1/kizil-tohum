@@ -52,7 +52,7 @@ namespace KizilTohum.Editor
                 var ps = ti.GetPlatformTextureSettings("WebGL");
                 var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(p);
                 string fmt = tex != null ? tex.format.ToString() : "?";
-                string anahtar = "overridden=" + ps.overridden + " fmt=" + ps.format + " max=" + ps.maxTextureSize + " | imp.max=" + ti.maxTextureSize + " comp=" + ti.textureCompression + " mip=" + ti.mipmapEnabled + " → asset format " + fmt;
+                string anahtar = "crunch=" + ti.crunchedCompression + " q=" + ti.compressionQuality + " overridden=" + ps.overridden + " fmt=" + ps.format + " max=" + ps.maxTextureSize + " | imp.max=" + ti.maxTextureSize + " comp=" + ti.textureCompression + " mip=" + ti.mipmapEnabled + " → asset format " + fmt;
                 int o; sayi.TryGetValue(anahtar, out o); sayi[anahtar] = o + 1;
                 if (fmt.Contains("RGBA32") || fmt.Contains("RGB24") || tex != null && (tex.width % 4 != 0 || tex.height % 4 != 0))
                     sb.AppendLine("  SIKIŞTIRMASIZ/NPOT? " + p + " " + (tex != null ? tex.width + "x" + tex.height : "") + " " + fmt);
@@ -95,6 +95,14 @@ namespace KizilTohum.Editor
                 AssetDatabase.ImportAsset(p, ImportAssetOptions.ForceUpdate);
             }
             Debug.Log("[KızılTohum] Boyut tamamlama: " + (sb.Length > 0 ? sb.ToString() : "değişen dosya yok"));
+        }
+
+        /// <summary>Resources/Gorseller altındaki tüm dokuları yeniden içe aktarır (importer kuralları değişince).</summary>
+        [MenuItem("Kızıl Tohum/Görselleri Yeniden İçe Aktar")]
+        public static void YenidenIceAktar()
+        {
+            AssetDatabase.ImportAsset("Assets/Resources/Gorseller", ImportAssetOptions.ImportRecursive | ImportAssetOptions.ForceUpdate);
+            Debug.Log("[KızılTohum] Görseller yeniden içe aktarıldı.");
         }
 
         static double MB(ulong b) { return b / 1048576.0; }
