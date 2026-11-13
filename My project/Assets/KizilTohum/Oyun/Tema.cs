@@ -73,6 +73,10 @@ namespace KizilTohum
         public const int YaziBuyuk = 32;
         public const int YaziBaslik = 40;
         public const int YaziLogo = 90;
+        public const int YaziMenuBaslik = 72;      // menü emblemi yanındaki KIZIL TOHUM
+        public const int YaziMenuAlt = 24;         // TYT BİYOLOJİ
+        public const float EmblemYuk = 150f;
+        public const float EmblemAralik = 24f;
 
         // ---------- boşluk ----------
         public const float MetinSol = 56f;

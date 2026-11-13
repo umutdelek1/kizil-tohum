@@ -347,12 +347,34 @@ namespace KizilTohum
             var logoPlaka = Yuz("LogoPlaka", menu.transform, Tema.PanelHafif);
             Kaplama(logoPlaka, "diyalog_paneli_9slice", Tema.PanelHafif);
             logoPlaka.color = Tema.LogoPlakaTon; logoPlaka.raycastTarget = false;
-            Konum(logoPlaka.rectTransform, 0.025f, 0.585f, 0.385f, 0.975f, 0, 0, 0, 0);
+            Konum(logoPlaka.rectTransform, 0.025f, 0.585f, 0.46f, 0.975f, 0, 0, 0, 0);   // yükseklik aynı; emblem + başlık için biraz geniş
             var baslik = Yazi("MenuBaslik", menu.transform, Tema.YaziLogo, Tema.Marka, TextAnchor.MiddleLeft);
             baslik.font = fontBaslik;
             baslik.text = "KIZIL TOHUM";
             var logo = Spr("Menu/logo_kizil_tohum");
-            if (logo != null)
+            var emblem = Spr("Logo/emblem_kizil_tohum");
+            if (emblem != null)
+            {
+                // koddan çizilen marka: solda emblem, yanında KIZIL TOHUM, altında TYT BİYOLOJİ (eski logo görseli yedek)
+                baslik.text = "";
+                var ei = Yuz("Emblem", menu.transform, Color.white);
+                ei.sprite = emblem; ei.preserveAspect = true; ei.raycastTarget = false;
+                ei.rectTransform.anchorMin = ei.rectTransform.anchorMax = new Vector2(0.025f, 0.78f);
+                ei.rectTransform.pivot = new Vector2(0f, 0.5f);
+                ei.rectTransform.sizeDelta = new Vector2(Tema.EmblemYuk, Tema.EmblemYuk);
+                ei.rectTransform.anchoredPosition = new Vector2(Tema.MetinSag, 0f);
+                float tx = Tema.MetinSag + Tema.EmblemYuk + Tema.EmblemAralik;
+                var mb = Yazi("MenuMarka", menu.transform, Tema.YaziMenuBaslik, Tema.Marka, TextAnchor.MiddleLeft);
+                mb.font = fontBaslik; mb.text = "KIZIL TOHUM";
+                mb.horizontalOverflow = HorizontalWrapMode.Overflow; mb.verticalOverflow = VerticalWrapMode.Overflow;
+                mb.rectTransform.anchorMin = new Vector2(0.025f, 0.78f); mb.rectTransform.anchorMax = new Vector2(0.46f, 0.78f);
+                mb.rectTransform.offsetMin = new Vector2(tx, -20f); mb.rectTransform.offsetMax = new Vector2(-Tema.MetinSag, 100f);
+                var ma = Yazi("MenuMarkaAlt", menu.transform, Tema.YaziMenuAlt, Tema.Soluk, TextAnchor.MiddleLeft);
+                ma.font = fontBaslik; ma.text = "TYT BİYOLOJİ";
+                ma.rectTransform.anchorMin = new Vector2(0.025f, 0.78f); ma.rectTransform.anchorMax = new Vector2(0.46f, 0.78f);
+                ma.rectTransform.offsetMin = new Vector2(tx + 4f, -56f); ma.rectTransform.offsetMax = new Vector2(-Tema.MetinSag, -14f);
+            }
+            else if (logo != null)
             {
                 var li = Yuz("Logo", menu.transform, Color.white);
                 li.sprite = logo; li.preserveAspect = true; li.raycastTarget = false;
