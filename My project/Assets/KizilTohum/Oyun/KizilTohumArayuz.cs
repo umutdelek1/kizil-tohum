@@ -22,13 +22,17 @@ namespace KizilTohum
         static readonly Color Kirmizi = Hex("FF5A52");
         static readonly Color Koyu = Hex("0C0A0C");
 
+        readonly List<RectTransform> paraKatman = new List<RectTransform>();
+        static readonly float[] paraGuc = { 10f, 22f, 40f };
+
+        bool duvarSpriteli;
         OyunDenetleyici oyun;
         GorevYoneticisi y;
-        Font font;
+        Font font, fontKalin, fontBaslik;
         Canvas canvas;
 
         GameObject menu, oyunEkrani, kartPaneli, sonEkrani, simPaneli;
-        Image sahne, duvarDolgu, portre, ipucuKutu, linKutu, menuZemin, sonZemin;
+        Image kartGorsel, sahne, duvarDolgu, portre, ipucuKutu, linKutu, menuZemin, sonZemin;
         Text duvarYazi, gorevBaslik, konusanYazi, metinYazi, ipucuYazi, linYazi, tepkiYazi, simYazi, kartBaslik, kartMetin, sonYazi, menuNot;
         RectTransform secenekKap, simKap;
         Button devamBtn, ipucuBtn;
@@ -55,7 +59,13 @@ namespace KizilTohum
         {
             oyun = OyunDenetleyici.Instance;
             y = oyun.Yonetici;
-            font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            font = Resources.Load<Font>("Fontlar/Inter-Regular");
+            fontKalin = Resources.Load<Font>("Fontlar/Inter-SemiBold");
+            fontBaslik = Resources.Load<Font>("Fontlar/SpaceGrotesk-Bold");
+            Font yedek = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (font == null) font = yedek;
+            if (fontKalin == null) fontKalin = font;
+            if (fontBaslik == null) fontBaslik = fontKalin;
             if (FindAnyObjectByType<EventSystem>() == null)
             {
                 var es = new GameObject("EventSystem");
@@ -74,6 +84,15 @@ namespace KizilTohum
         {
             if (ipucuKutu != null) ipucuKutu.enabled = !string.IsNullOrEmpty(ipucuYazi.text);
             if (linKutu != null) linKutu.enabled = !string.IsNullOrEmpty(linYazi.text);
+            var fare = UnityEngine.InputSystem.Mouse.current;
+            if (fare != null && paraKatman.Count > 0)
+            {
+                Vector2 p = fare.position.ReadValue();
+                Vector2 n = new Vector2(Mathf.Clamp(p.x / Mathf.Max(1, Screen.width) * 2f - 1f, -1f, 1f), Mathf.Clamp(p.y / Mathf.Max(1, Screen.height) * 2f - 1f, -1f, 1f));
+                for (int i = 0; i < paraKatman.Count; i++)
+                    if (paraKatman[i] != null)
+                        paraKatman[i].anchoredPosition = Vector2.Lerp(paraKatman[i].anchoredPosition, new Vector2(-n.x, -n.y) * paraGuc[i], Time.unscaledDeltaTime * 4f);
+            }
             var k = UnityEngine.InputSystem.Keyboard.current;
             if (k == null || kartPaneli == null || !kartPaneli.activeSelf) return;
             if (k.spaceKey.wasPressedThisFrame || k.enterKey.wasPressedThisFrame) kartPaneli.SetActive(false);
@@ -107,12 +126,19 @@ namespace KizilTohum
             var ust = Yuz("Ust", oyunEkrani.transform, Panel);
             Konum(ust.rectTransform, 0, 1, 1, 1, 0, -90, 0, 0);
             gorevBaslik = Yazi("GorevBaslik", ust.transform, 30, Turuncu, TextAnchor.MiddleLeft);
+            gorevBaslik.font = fontBaslik;
             Konum(gorevBaslik.rectTransform, 0, 0, 0.6f, 1, 30, 0, 0, 0);
             var duvarKap = Yuz("DuvarKap", ust.transform, Hex("2B2428"));
             Konum(duvarKap.rectTransform, 0.62f, 0.3f, 0.97f, 0.7f, 0, 0, 0, 0);
+            var cerceve = Spr("Arayuz/tohum_duvari_cubuk_cercevesi");
+            var dolgu = Spr("Arayuz/tohum_duvari_cubuk_dolgu");
+            duvarSpriteli = cerceve != null && dolgu != null;
+            if (duvarSpriteli) { duvarKap.sprite = cerceve; duvarKap.color = Color.white; Konum(duvarKap.rectTransform, 0.62f, 0.12f, 0.97f, 0.88f, 0, 0, 0, 0); }
             duvarDolgu = Yuz("DuvarDolgu", duvarKap.transform, Yesil);
+            if (duvarSpriteli) duvarDolgu.sprite = dolgu;
             Doldur(duvarDolgu.rectTransform);
-            duvarYazi = Yazi("DuvarYazi", duvarKap.transform, 24, Koyu, TextAnchor.MiddleCenter);
+            duvarYazi = Yazi("DuvarYazi", duvarKap.transform, 24, duvarSpriteli ? Color.white : Koyu, TextAnchor.MiddleCenter);
+            duvarYazi.font = fontKalin;
             Doldur(duvarYazi.rectTransform);
 
             // alt panel
@@ -124,9 +150,10 @@ namespace KizilTohum
             Konum(portre.rectTransform, 0.01f, 0.46f, 0.20f, 0.46f, 0, 0, 0, 400);
             portre.gameObject.SetActive(false);
             konusanYazi = Yazi("Konusan", alt.transform, 28, Sari, TextAnchor.UpperLeft);
-            Konum(konusanYazi.rectTransform, 0.035f, 0.80f, 0.6f, 0.90f, 0, 0, 0, 0);
+            konusanYazi.font = fontKalin;
+            Konum(konusanYazi.rectTransform, 0.04f, 0.76f, 0.6f, 0.87f, 0, 0, 0, 0);
             metinYazi = Yazi("Metin", alt.transform, 30, Color.white, TextAnchor.UpperLeft);
-            Konum(metinYazi.rectTransform, 0.035f, 0.5f, 0.965f, 0.80f, 0, 0, 0, 0);
+            Konum(metinYazi.rectTransform, 0.04f, 0.50f, 0.96f, 0.77f, 0, 0, 0, 0);
 
             var sk = Bos("Secenekler", alt.transform);
             secenekKap = (RectTransform)sk.transform;
@@ -178,11 +205,15 @@ namespace KizilTohum
             Doldur((RectTransform)kartPaneli.transform);
             var kart = Yuz("Kart", kartPaneli.transform, Hex("221B20"));
             Kaplama(kart, "kavram_karti_cercevesi_9slice", Hex("221B20"));
-            Konum(kart.rectTransform, 0.25f, 0.2f, 0.75f, 0.8f, 0, 0, 0, 0);
+            Konum(kart.rectTransform, 0.15f, 0.08f, 0.85f, 0.92f, 0, 0, 0, 0);
             kartBaslik = Yazi("KartBaslik", kart.transform, 40, Sari, TextAnchor.UpperCenter);
-            Konum(kartBaslik.rectTransform, 0.03f, 0.8f, 0.97f, 0.97f, 0, 0, 0, 0);
+            kartBaslik.font = fontBaslik;
+            Konum(kartBaslik.rectTransform, 0.03f, 0.86f, 0.97f, 0.97f, 0, 0, 0, 0);
+            kartGorsel = Yuz("KartGorsel", kart.transform, Color.white);
+            kartGorsel.preserveAspect = true;
+            Konum(kartGorsel.rectTransform, 0.04f, 0.34f, 0.5f, 0.84f, 0, 0, 0, 0);
             kartMetin = Yazi("KartMetin", kart.transform, 30, Color.white, TextAnchor.UpperLeft);
-            Konum(kartMetin.rectTransform, 0.05f, 0.2f, 0.95f, 0.8f, 0, 0, 0, 0);
+            Konum(kartMetin.rectTransform, 0.53f, 0.2f, 0.96f, 0.85f, 0, 0, 0, 0);
             Text t4;
             var kb = Dugme("KartKapat", kart.transform, "Defterime ekle ✓", Turuncu, out t4);
             Konum((RectTransform)kb.transform, 0.3f, 0.04f, 0.7f, 0.16f, 0, 0, 0, 0);
@@ -193,11 +224,14 @@ namespace KizilTohum
             sonZemin = Yuz("SonEkrani", kok, Hex("0C0A0C", 0.96f));
             sonEkrani = sonZemin.gameObject;
             Doldur((RectTransform)sonEkrani.transform);
-            sonYazi = Yazi("SonYazi", sonEkrani.transform, 32, Color.white, TextAnchor.UpperCenter);
-            Konum(sonYazi.rectTransform, 0.1f, 0.2f, 0.9f, 0.95f, 0, 0, 0, 0);
+            var sonPanel = Yuz("SonPanel", sonEkrani.transform, Hex("171316", 0.88f));
+            Kaplama(sonPanel, "diyalog_paneli_9slice", Hex("171316", 0.88f));
+            Konum(sonPanel.rectTransform, 0.52f, 0.2f, 0.97f, 0.93f, 0, 0, 0, 0);
+            sonYazi = Yazi("SonYazi", sonPanel.transform, 32, Color.white, TextAnchor.UpperCenter);
+            Konum(sonYazi.rectTransform, 0.06f, 0.06f, 0.94f, 0.94f, 0, 0, 0, 0);
             Text t5;
             var sb = Dugme("SonMenu", sonEkrani.transform, "Ana menü", Turuncu, out t5);
-            Konum((RectTransform)sb.transform, 0.38f, 0.05f, 0.62f, 0.15f, 0, 0, 0, 0);
+            Konum((RectTransform)sb.transform, 0.64f, 0.06f, 0.86f, 0.15f, 0, 0, 0, 0);
             sb.onClick.AddListener(() => Goster(true));
             sonEkrani.SetActive(false);
 
@@ -208,6 +242,7 @@ namespace KizilTohum
             if (kapak != null) { menuZemin.sprite = kapak; menuZemin.color = new Color(0.55f, 0.55f, 0.55f, 1f); }
             Doldur((RectTransform)menu.transform);
             var baslik = Yazi("MenuBaslik", menu.transform, 90, Turuncu, TextAnchor.MiddleCenter);
+            baslik.font = fontBaslik;
             baslik.text = "KIZIL TOHUM";
             var logo = Spr("Menu/logo_kizil_tohum");
             if (logo != null)
@@ -276,10 +311,33 @@ namespace KizilTohum
             y.IpucuGosterildi += t => { ipucuYazi.text = "İpucu: " + t; };
             y.LinNotuGosterildi += t => { linYazi.text = "Dr. Lin: " + t; };
             y.SaglikDegisti += (v, fark) => DuvarCiz(v);
-            y.KavramKartiAcildi += k => { kartBaslik.text = k.baslik; kartMetin.text = k.konu + "\n\n" + k.metin; kartPaneli.SetActive(true); };
+            y.KavramKartiAcildi += k => { kartBaslik.text = k.baslik; kartMetin.text = k.konu + "\n\n" + k.metin; var ks = Spr("Kartlar/" + k.id); kartGorsel.sprite = ks; kartGorsel.gameObject.SetActive(ks != null); kartPaneli.SetActive(true); };
             y.SimulasyonGuncellendi += SimCiz;
             y.OyunBitti += o => SonGoster(o);
             y.GorevBitti += g => { };
+        }
+
+        // Parallax: arka/orta/ön katmanlar fareye göre hafifçe kayar (katmanlar yoksa düz sahne görünür)
+        void ParalaksKur(string ad)
+        {
+            for (int i = 0; i < paraKatman.Count; i++) if (paraKatman[i] != null) Destroy(paraKatman[i].gameObject);
+            paraKatman.Clear();
+            var arka = Spr("Parallax/" + ad + "_arka_plan_dolu");
+            var orta = Spr("Parallax/" + ad + "_orta_plan");
+            var on = Spr("Parallax/" + ad + "_on_plan");
+            if (arka == null || orta == null) return;
+            var ks = new[] { arka, orta, on };
+            for (int i = 0; i < ks.Length; i++)
+            {
+                if (ks[i] == null) continue;
+                var im = Yuz("Katman" + i, sahne.transform, Color.white);
+                im.sprite = ks[i]; im.raycastTarget = false; im.preserveAspect = false;
+                var r = im.rectTransform;
+                r.anchorMin = Vector2.zero; r.anchorMax = Vector2.one;
+                r.offsetMin = new Vector2(-60, -60); r.offsetMax = new Vector2(60, 60);
+                paraKatman.Add(r);
+            }
+            sahne.color = new Color(1, 1, 1, 0);
         }
 
         void PortreSec(string konusan, string durum)
@@ -289,11 +347,13 @@ namespace KizilTohum
             {
                 string k = konusan.ToLowerInvariant();
                 if (k.Contains("ada")) ad = "Portreler/" + (durum == "yanlis" ? "ada_endiseli" : durum == "dogru" ? "ada_gulumseyen" : "ada_dusunceli");
-                else if (k.Contains("okan")) ad = "Portreler/" + (durum == "yanlis" ? "okan_sert" : "okan_notr");
+                else if (k.Contains("okan")) ad = "Portreler/" + (durum == "yanlis" ? "okan_kizgin" : durum == "dogru" ? "okan_rahatlamis" : "okan_notr");
                 else if (k.Contains("lin")) ad = "Portreler/lin_portre";
                 else if (k.Contains("tohum")) ad = "Mercek/" + (durum == "yanlis" ? "mercek_uyari" : "mercek_normal");
             }
             Sprite sp = ad != null ? Resources.Load<Sprite>("Gorseller/" + ad) : null;
+            if (sp == null && ad == "Portreler/okan_kizgin") sp = Resources.Load<Sprite>("Gorseller/Portreler/okan_sert");
+            if (sp == null && ad == "Portreler/okan_rahatlamis") sp = Resources.Load<Sprite>("Gorseller/Portreler/okan_notr");
             portre.gameObject.SetActive(sp != null);
             if (sp != null) portre.sprite = sp;
         }
@@ -302,8 +362,17 @@ namespace KizilTohum
         {
             duvarYazi.text = "Tohum Duvarı  " + v + "/100";
             var r = duvarDolgu.rectTransform;
+            float f = Mathf.Clamp01(v / 100f);
+            if (duvarSpriteli)
+            {
+                r.anchorMin = new Vector2(0.013f, 0.13f);
+                r.anchorMax = new Vector2(0.013f + 0.974f * f, 0.87f);
+                r.offsetMin = r.offsetMax = Vector2.zero;
+                duvarDolgu.color = v >= 85 ? Color.white : v >= 60 ? Hex("FFE08A") : Hex("FF8A80");
+                return;
+            }
             r.anchorMin = Vector2.zero;
-            r.anchorMax = new Vector2(Mathf.Clamp01(v / 100f), 1);
+            r.anchorMax = new Vector2(f, 1);
             r.offsetMin = r.offsetMax = Vector2.zero;
             duvarDolgu.color = v >= 85 ? Yesil : v >= 60 ? Sari : Kirmizi;
         }
@@ -323,6 +392,7 @@ namespace KizilTohum
                 if (spr == null) spr = Resources.Load<Sprite>("Gorseller/" + s.adim.gorsel);
                 if (spr != null) { sahne.sprite = spr; sahne.color = Color.white; }
                 else { sahne.sprite = null; sahne.color = Hex("2A2226"); }
+                ParalaksKur(s.adim.gorsel);
             }
             bool soruTipi = s.adim.SecenekliMi;
             ipucuBtn.gameObject.SetActive(soruTipi);
@@ -361,7 +431,7 @@ namespace KizilTohum
                 var b = Dugme("Sec" + idx, secenekKap, (idx + 1) + ") " + so.metin, Hex("2B2428"), out t);
                 t.fontSize = 26; t.alignment = TextAnchor.MiddleLeft;
                 Kaplama(b.image, "secenek_butonu_normal_9slice", Hex("2B2428"));
-                t.rectTransform.offsetMin = new Vector2(24, 0);
+                t.rectTransform.offsetMin = new Vector2(56, 0); t.rectTransform.offsetMax = new Vector2(-48, 0);
                 b.onClick.AddListener(() => y.CevapVer(idx));
                 b.interactable = !so.elendi;
                 secBtn.Add(b);
@@ -427,7 +497,7 @@ namespace KizilTohum
                 {
                     var hi = Yuz("Hucre", simKap, Color.white);
                     hi.sprite = hs; hi.preserveAspect = true; hi.raycastTarget = false;
-                    Konum(hi.rectTransform, 0.5f, 0.64f, 0.5f, 0.64f, -170, -110, 170, 110);
+                    Konum(hi.rectTransform, 0.5f, 0.64f, 0.5f, 0.64f, -290, -250, 290, 250);
                     simYazi.text = "Dış/iç derişim: " + o.oran.ToString("0.00") + " · " + o.cumle + (s.hedefeUlasti ? "\n✓ Hedefe ulaştın!" : "");
                     return;
                 }
@@ -491,7 +561,7 @@ namespace KizilTohum
         {
             sonEkrani.SetActive(true);
             var sz = (o.son != null && !string.IsNullOrEmpty(o.son.gorsel)) ? Spr("Sahneler/" + o.son.gorsel) : null;
-            if (sz != null) { sonZemin.sprite = sz; sonZemin.color = new Color(0.45f, 0.45f, 0.45f, 1f); }
+            if (sz != null) { sonZemin.sprite = sz; sonZemin.color = new Color(0.9f, 0.9f, 0.9f, 1f); }
             string m = o.son != null ? o.son.ad + "\n\n" + o.son.metin : "";
             m += "\n\nTohum Duvarı: " + o.saglik + "/100";
             m += "\nKavram kartları: " + o.kartlar.Count + "/14";
@@ -541,6 +611,7 @@ namespace KizilTohum
             var b = im.gameObject.AddComponent<Button>();
             b.targetGraphic = im;
             t = Yazi("Yazi", im.transform, 28, Color.white, TextAnchor.MiddleCenter);
+            t.font = fontKalin;
             Doldur(t.rectTransform);
             t.text = yazi;
             var cb = b.colors;

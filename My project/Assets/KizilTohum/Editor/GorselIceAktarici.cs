@@ -20,7 +20,7 @@ namespace KizilTohum.Editor
             string ad = System.IO.Path.GetFileNameWithoutExtension(assetPath);
             if (ad.EndsWith("_9slice"))
             {
-                float b = ad.StartsWith("diyalog") ? 44f : ad.StartsWith("secenek") ? 32f : ad.StartsWith("ipucu") ? 36f : 48f;
+                float b = 36f; // bugünkü arayüz seti: tüm 9-slice parçalarda 36 px
                 ti.spriteBorder = new Vector4(b, b, b, b);
             }
         }

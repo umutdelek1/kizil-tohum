@@ -5,19 +5,19 @@
       "ad": "Yeşil Kubbe",
       "min": 85,
       "metin": "Kubbe yemyeşil. Kayıtların eksiksiz, kararların kanıta dayalı.",
-      "gorsel": "son_yesil_kubbe"
+      "gorsel": "final_yesil_kubbe_ic"
     },
     {
       "ad": "Yarım Sera",
       "min": 60,
       "metin": "Seranın bir kısmı kurtuldu. Kırk yedi yaşıyor; yarın yeniden deneyeceksin.",
-      "gorsel": "son_yarim_sera"
+      "gorsel": "final_yarim_sera_ic"
     },
     {
       "ad": "Tek Çekmece",
       "min": 0,
       "metin": "Geriye kırk yedi kaldı. Ama doğru kayıtla bir tohum, yeniden başlamaya yeter.",
-      "gorsel": "son_tek_cekmece"
+      "gorsel": "final_tek_cekmece_ic"
     }
   ],
   "kartlar": [
