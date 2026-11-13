@@ -25,6 +25,12 @@ namespace KizilTohum
             return k;
         }
 
+        public static void Sifirla()
+        {
+            PlayerPrefs.DeleteKey(Anahtar);
+            PlayerPrefs.Save();
+        }
+
         public static void Isaretle(string gorevId)
         {
             if (string.IsNullOrEmpty(gorevId)) return;
@@ -253,8 +259,9 @@ namespace KizilTohum
 
             if (y != null)
             {
+                KartKumesi.Birlestir(y.AcilanKartlar);   // eski kayıttaki kartlar da kümeye girsin
                 int toplam = y.Icerik != null ? y.Icerik.kartlar.Count : 14;
-                sayac.text = "Kavram kartları: " + y.AcilanKartlar.Count + "/" + toplam;
+                sayac.text = "Kavram kartları: " + KartKumesi.Sayi + "/" + toplam;
             }
         }
 

@@ -364,7 +364,7 @@ namespace KizilTohum
             alti.text = "TYT Biyoloji · Umut-1 Mars Kolonisi";
             Konum(alti.rectTransform, 0.055f, 0.60f, 0.40f, 0.67f, 0, 0, 0, 0);
 
-            MenuDugme("Yeni Oyun", 0.50f, Tema.YaziOrta, () => HaritaAc());
+            MenuDugme("Yeni Oyun", 0.50f, Tema.YaziOrta, () => { HaritaKayit.Sifirla(); KartKumesi.Sifirla(); oyun.YeniOyun(); HaritaAc(); }); // tüm ilerleme sıfırlanır; harita gündüze döner
             MenuDugme("Devam Et", 0.41f, Tema.YaziOrta, () => { if (oyun.KayitVarMi && oyun.DevamEt()) { Uygula(); Goster(false); } });
             MenuDugme("Görev 1 · Yüz Çekmece", 0.32f, Tema.YaziKucuk, () => GorevAc("KT01"));
             MenuDugme("Görev 2 · Islak Toprakta Susuzluk", 0.245f, Tema.YaziKucuk, () => GorevAc("KT04"));
@@ -575,7 +575,7 @@ namespace KizilTohum
             y.IpucuGosterildi += t => { ipucuYazi.text = "İpucu: " + t; };
             y.LinNotuGosterildi += t => { linYazi.text = "Dr. Lin: " + t; };
             y.SaglikDegisti += (v, fark) => DuvarCiz(v);
-            y.KavramKartiAcildi += k => { kartBaslik.text = k.baslik; kartMetin.text = k.konu + "\n\n" + k.metin; var ks = Spr("Kartlar/" + k.id); kartGorsel.sprite = ks; kartGorsel.gameObject.SetActive(ks != null); kartPaneli.SetActive(true); kartT = 0f; KartUygula(); };
+            y.KavramKartiAcildi += k => { KartKumesi.Ekle(k.id); kartBaslik.text = k.baslik; kartMetin.text = k.konu + "\n\n" + k.metin; var ks = Spr("Kartlar/" + k.id); kartGorsel.sprite = ks; kartGorsel.gameObject.SetActive(ks != null); kartPaneli.SetActive(true); kartT = 0f; KartUygula(); };
             y.SimulasyonGuncellendi += SimCiz;
             y.OyunBitti += o => SonGoster(o);
             y.GorevBitti += g => { if (harita != null) { harita.GorevTamamlandi(g.id); HaritaAc(); } };
@@ -1070,9 +1070,10 @@ namespace KizilTohum
             sonEkrani.SetActive(true);
             var sz = (o.son != null && !string.IsNullOrEmpty(o.son.gorsel)) ? Spr("Sahneler/" + o.son.gorsel) : null;
             if (sz != null) { sonZemin.sprite = sz; sonZemin.color = Tema.SonTon; }
+            KartKumesi.Birlestir(y.AcilanKartlar);
             string m = o.son != null ? o.son.ad + "\n\n" + o.son.metin : "";
             m += "\n\nTohum Duvarı: " + o.saglik + "/100";
-            m += "\nKavram kartları: " + o.kartlar.Count + "/14";
+            m += "\nKavram kartları: " + KartKumesi.Sayi + "/" + (y.Icerik != null ? y.Icerik.kartlar.Count : 14);
             if (o.takilanlar.Count > 0) m += "\nTekrar edilecek soru: " + o.takilanlar.Count;
             sonYazi.text = m;
         }
