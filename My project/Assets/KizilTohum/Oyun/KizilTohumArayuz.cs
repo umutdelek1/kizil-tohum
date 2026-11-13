@@ -324,14 +324,15 @@ namespace KizilTohum
             // menü
             menuZemin = Yuz("Menu", kok, Tema.MenuZemin);
             menu = menuZemin.gameObject;
-            var kapak = Spr("Menu/kapak_arka_plan");
-            if (kapak != null) { menuZemin.sprite = kapak; menuZemin.color = Tema.KapakTon; }
+            var yeniKapak = Spr("Menu/menu_kapak");                 // yeni ana menü arka planı; yoksa eskisi
+            var kapak = yeniKapak != null ? yeniKapak : Spr("Menu/kapak_arka_plan");
+            if (kapak != null) { menuZemin.sprite = kapak; menuZemin.color = yeniKapak != null ? Color.white : Tema.KapakTon; }
             Doldur((RectTransform)menu.transform);
             // canlı arka plan: Ada çekmecede — katmanlar fareyle ve kendiliğinden hafifçe kayar
             var mArka = Spr("Parallax/tohum_duvari_arka_plan_dolu");
             var mOrta = Spr("Parallax/tohum_duvari_orta_plan");
             var mOn = Spr("Parallax/tohum_duvari_on_plan");
-            if (mArka != null && mOrta != null)
+            if (yeniKapak == null && mArka != null && mOrta != null)   // yeni kapak varken paralaks katmanları kullanılmaz
             {
                 menuZemin.sprite = null; menuZemin.color = Tema.Base;
                 var ml = new[] { mArka, mOrta, mOn };
@@ -346,10 +347,10 @@ namespace KizilTohum
                     menuKatman.Add(r);
                 }
             }
-            var logoPlaka = Yuz("LogoPlaka", menu.transform, Tema.PanelHafif);
-            Kaplama(logoPlaka, "diyalog_paneli_9slice", Tema.PanelHafif);
-            logoPlaka.color = Tema.LogoPlakaTon; logoPlaka.raycastTarget = false;
-            Konum(logoPlaka.rectTransform, 0.025f, 0.585f, 0.46f, 0.975f, 0, 0, 0, 0);   // yükseklik aynı; emblem + başlık için biraz geniş
+            // sol buton paneli: ekranın %32'si, soldan sağa koyu gradient (solda %80 opak, sağ kenarda şeffaf)
+            var panel = Yuz("MenuPanel", menu.transform, Color.white);
+            panel.sprite = SolaKoyuGradient(); panel.raycastTarget = false;
+            Konum(panel.rectTransform, 0f, 0f, Tema.MenuPanelGenislik, 1f, 0, 0, 0, 0);
             var baslik = Yazi("MenuBaslik", menu.transform, Tema.YaziLogo, Tema.Marka, TextAnchor.MiddleLeft);
             baslik.font = fontBaslik;
             baslik.text = "KIZIL TOHUM";
@@ -361,20 +362,21 @@ namespace KizilTohum
                 baslik.text = "";
                 var ei = Yuz("Emblem", menu.transform, Color.white);
                 ei.sprite = emblem; ei.preserveAspect = true; ei.raycastTarget = false;
-                ei.rectTransform.anchorMin = ei.rectTransform.anchorMax = new Vector2(0.025f, 0.78f);
-                ei.rectTransform.pivot = new Vector2(0f, 0.5f);
+                // dikey blok: üstte emblem, altında KIZIL TOHUM, altında TYT BİYOLOJİ (panel %32 genişlikte)
+                ei.rectTransform.anchorMin = ei.rectTransform.anchorMax = new Vector2(0f, 1f);
+                ei.rectTransform.pivot = new Vector2(0f, 1f);
                 ei.rectTransform.sizeDelta = new Vector2(Tema.EmblemYuk, Tema.EmblemYuk);
-                ei.rectTransform.anchoredPosition = new Vector2(Tema.MetinSag, 0f);
-                float tx = Tema.MetinSag + Tema.EmblemYuk + Tema.EmblemAralik;
+                ei.rectTransform.anchoredPosition = new Vector2(Tema.MetinSag + 24f, -36f);
+                float tx = Tema.MetinSag + 24f;
                 var mb = Yazi("MenuMarka", menu.transform, Tema.YaziMenuBaslik, Tema.Marka, TextAnchor.MiddleLeft);
                 mb.font = fontBaslik; mb.text = "KIZIL TOHUM";
                 mb.horizontalOverflow = HorizontalWrapMode.Overflow; mb.verticalOverflow = VerticalWrapMode.Overflow;
-                mb.rectTransform.anchorMin = new Vector2(0.025f, 0.78f); mb.rectTransform.anchorMax = new Vector2(0.46f, 0.78f);
-                mb.rectTransform.offsetMin = new Vector2(tx, -20f); mb.rectTransform.offsetMax = new Vector2(-Tema.MetinSag, 100f);
+                UstKonum(mb.rectTransform, 0f, Tema.MenuPanelGenislik, 36f + Tema.EmblemYuk + 6f, 36f + Tema.EmblemYuk + 106f);
+                mb.rectTransform.offsetMin = new Vector2(tx, mb.rectTransform.offsetMin.y); mb.rectTransform.offsetMax = new Vector2(0f, mb.rectTransform.offsetMax.y);
                 var ma = Yazi("MenuMarkaAlt", menu.transform, Tema.YaziMenuAlt, Tema.Soluk, TextAnchor.MiddleLeft);
                 ma.font = fontBaslik; ma.text = "TYT BİYOLOJİ";
-                ma.rectTransform.anchorMin = new Vector2(0.025f, 0.78f); ma.rectTransform.anchorMax = new Vector2(0.46f, 0.78f);
-                ma.rectTransform.offsetMin = new Vector2(tx + 4f, -56f); ma.rectTransform.offsetMax = new Vector2(-Tema.MetinSag, -14f);
+                UstKonum(ma.rectTransform, 0f, Tema.MenuPanelGenislik, 36f + Tema.EmblemYuk + 100f, 36f + Tema.EmblemYuk + 140f);
+                ma.rectTransform.offsetMin = new Vector2(tx + 4f, ma.rectTransform.offsetMin.y); ma.rectTransform.offsetMax = new Vector2(0f, ma.rectTransform.offsetMax.y);
             }
             else if (logo != null)
             {
@@ -393,7 +395,7 @@ namespace KizilTohum
             Text zt;
             var zb = Dugme("Zorluk", menu.transform, "Zorluk: Normal", Tema.KontrolAlt, out zt, "secenek_butonu_normal_9slice");
             zt.fontSize = Tema.YaziKucuk;
-            Konum((RectTransform)zb.transform, 0.05f, 0.065f, 0.30f, 0.135f, 0, 0, 0, 0);
+            Konum((RectTransform)zb.transform, 0.025f, 0.065f, 0.295f, 0.135f, 0, 0, 0, 0);
             zb.onClick.AddListener(() =>
             {
                 if (zorlukCarpan < 0.75f) { zorlukCarpan = 1f; zt.text = "Zorluk: Normal"; }
@@ -435,6 +437,27 @@ namespace KizilTohum
             else HaritaAc(); // bilinmeyen görev: haritada kal
         }
 
+        static Sprite gradientSprite;
+
+        // Soldan sağa: sol kenar Tema.MenuPanelOpaklik opak koyu, sağ kenar tamamen şeffaf (yumuşak geçiş).
+        static Sprite SolaKoyuGradient()
+        {
+            if (gradientSprite != null) return gradientSprite;
+            const int w = 256;
+            var tex = new Texture2D(w, 2, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Clamp; tex.filterMode = FilterMode.Bilinear;
+            for (int x = 0; x < w; x++)
+            {
+                float t = x / (float)(w - 1);
+                float a = Tema.MenuPanelOpaklik * (1f - Mathf.SmoothStep(0f, 1f, t));
+                var c = Tema.Base; c.a = a;
+                tex.SetPixel(x, 0, c); tex.SetPixel(x, 1, c);
+            }
+            tex.Apply();
+            gradientSprite = Sprite.Create(tex, new Rect(0, 0, w, 2), new Vector2(0.5f, 0.5f), 100f);
+            return gradientSprite;
+        }
+
         void GorevAc(string id)
         {
             Uygula();
@@ -450,7 +473,7 @@ namespace KizilTohum
             t.fontSize = boyut; t.alignment = TextAnchor.MiddleLeft;
             t.rectTransform.offsetMin = new Vector2(Tema.MetinSol, 0); t.rectTransform.offsetMax = new Vector2(-Tema.MetinSag, 0);
             var cb = b.colors; cb.highlightedColor = Tema.Hover; cb.pressedColor = Tema.Basili; b.colors = cb;
-            Konum((RectTransform)b.transform, 0.05f, yPos, 0.34f, yPos + (boyut >= Tema.YaziOrta ? 0.08f : 0.07f), 0, 0, 0, 0);
+            Konum((RectTransform)b.transform, 0.025f, yPos, 0.295f, yPos + (boyut >= Tema.YaziOrta ? 0.08f : 0.07f), 0, 0, 0, 0);
             b.onClick.AddListener(act);
         }
 
