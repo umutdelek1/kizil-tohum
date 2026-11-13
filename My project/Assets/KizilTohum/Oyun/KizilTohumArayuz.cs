@@ -38,6 +38,7 @@ namespace KizilTohum
         GameObject videoKok;
         VideoPlayer video;
         RawImage videoGorsel;
+        RenderTexture videoRT;
         Coroutine videoZaman;
         int videoKapandiKare = -1;
         System.Action<bool> videoBitince; // harita dalış videosu için: true = oynatılamadı
@@ -149,11 +150,6 @@ namespace KizilTohum
             {
                 if (fare != null) slotlar[i].fare = Vector2.Lerp(slotlar[i].fare, fn, Time.unscaledDeltaTime * Tema.Takip);
                 KameraUygula(slotlar[i], simdi);
-            }
-            if (video != null && videoGorsel != null && video.texture != null)
-            {
-                videoGorsel.texture = video.texture;
-                videoGorsel.enabled = true;
             }
             var k = UnityEngine.InputSystem.Keyboard.current;
             if (videoKok != null && k != null && (k.spaceKey.wasPressedThisFrame || k.enterKey.wasPressedThisFrame)) { VideoBitir(); return; }
@@ -792,7 +788,7 @@ namespace KizilTohum
             vp.source = VideoSource.Url;
             vp.url = yol;
             vp.audioOutputMode = VideoAudioOutputMode.None;
-            vp.renderMode = VideoRenderMode.APIOnly;
+            vp.renderMode = VideoRenderMode.RenderTexture; // WebGL dahil her platformda desteklenen çıkış
             vp.errorReceived += (p, m) =>
             {
                 if (p != video) return;
@@ -805,16 +801,24 @@ namespace KizilTohum
                 if (videoZaman != null) { StopCoroutine(videoZaman); videoZaman = null; }
                 if (p.width == 0 || p.height == 0) { Debug.LogWarning("KizilTohum: video boyutu okunamadı: " + dosya); VideoBitir(true); return; }
                 oran.aspectRatio = (float)p.width / p.height;
+                videoRT = new RenderTexture((int)p.width, (int)p.height, 0);
+                p.targetTexture = videoRT;
+                videoGorsel.texture = videoRT;
+                videoGorsel.enabled = true;
                 p.Play();
             };
             vp.loopPointReached += p => { if (p == video) VideoBitir(); };
-            vp.Prepare();
             videoZaman = StartCoroutine(VideoZamanAsimi(vp, dosya));
             return true;
         }
 
+        // Görev menüden/haritadan açılırken video, oyun ekranı henüz kapalıyken kurulur. Etkin olmayan
+        // VideoPlayer hazırlanamaz; bu yüzden Prepare ekran açılınca çağrılır, süre sınırı ondan sonra başlar.
         IEnumerator VideoZamanAsimi(VideoPlayer vp, string dosya)
         {
+            while (vp != null && vp == video && !vp.isActiveAndEnabled) yield return null;
+            if (vp == null || vp != video) { videoZaman = null; yield break; }
+            vp.Prepare();
             yield return new WaitForSecondsRealtime(Tema.VideoHazirlikSiniri);
             videoZaman = null;
             if (vp == video && !vp.isPrepared)
@@ -831,6 +835,7 @@ namespace KizilTohum
             if (videoKok == null) return;
             if (video != null) video.Stop();
             Destroy(videoKok);
+            if (videoRT != null) { videoRT.Release(); Destroy(videoRT); videoRT = null; }
             videoKok = null; video = null; videoGorsel = null;
             videoKapandiKare = Time.frameCount;
             var b = videoBitince; videoBitince = null;
