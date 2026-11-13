@@ -286,6 +286,41 @@ namespace KizilTohum.Editor
             KartKapat();
             Cek("12_kt08_ilk_adim");
             yield return 0.4f;
+
+            // h) KT01 tohum_duvari_3d ve lab_masasi_3d: açılış anı ve zoom sonu (10. sn)
+            Cagir("VideoIptal");
+            Cagir("GorevAc", "KT01");
+            yield return 0.5f;
+            Cagir("VideoIptal");
+            foreach (var x in Gec(a => a.id == "KT01-5")) yield return x;
+            yield return 1.5f; KartKapat();
+            Cek("13_tohum_duvari_acilis");
+            yield return 8.8f; KartKapat();
+            Cek("14_tohum_duvari_10sn");
+            yield return 0.4f;
+            foreach (var x in Gec(a => a.id == "KT01-11")) yield return x;
+            yield return 1.5f; KartKapat();
+            Cek("15_lab_masasi_acilis");
+            yield return 8.8f; KartKapat();
+            Cek("16_lab_masasi_10sn");
+            yield return 0.4f;
+
+            // i) harita dalış klipleri: son kare ve klipten sonraki ilk sahne
+            foreach (var id in new[] { "tohum_duvari", "kubbe_sera" })
+            {
+                Cagir("VideoIptal");
+                Cagir("HaritaAc");
+                yield return 2f;
+                var pn = NoktaBul(id);
+                if (pn == null) { Not("harita noktası yok: " + id); continue; }
+                pn.Tiklandi();
+                yield return 4.55f;
+                Cek("17_dalis_" + id + "_son_kare");
+                yield return 0.4f;
+                yield return 2.2f;
+                Cek("18_dalis_" + id + "_sonrasi");
+                yield return 0.4f;
+            }
             yield return 1.5f;
         }
 

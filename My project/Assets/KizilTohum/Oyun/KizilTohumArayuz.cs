@@ -620,9 +620,10 @@ namespace KizilTohum
             s.olcek = a.kameraOlcek > 0f ? a.kameraOlcek : Tema.KenBurnsOlcek;
             s.odak = (a.odakX > 0f || a.odakY > 0f) ? new Vector2(a.odakX, a.odakY) : new Vector2(0.5f, 0.5f);
 
-            var arka = Spr("Parallax/" + a.gorsel + "_arka_plan_dolu");
-            var orta = Spr("Parallax/" + a.gorsel + "_orta_plan");
-            var on = Spr("Parallax/" + a.gorsel + "_on_plan");
+            Sprite yeni3d = string.IsNullOrEmpty(a.gorsel3d) ? null : Resources.Load<Sprite>("Gorseller/" + a.gorsel3d);   // 3D görsel varken paralaks katmanları devre dışı
+            var arka = yeni3d != null ? null : Spr("Parallax/" + a.gorsel + "_arka_plan_dolu");
+            var orta = yeni3d != null ? null : Spr("Parallax/" + a.gorsel + "_orta_plan");
+            var on = yeni3d != null ? null : Spr("Parallax/" + a.gorsel + "_on_plan");
             if (arka != null && orta != null)
             {
                 var ks = new[] { arka, orta, on };
@@ -638,8 +639,7 @@ namespace KizilTohum
                 }
                 return s;
             }
-            Sprite spr = null;
-            if (!string.IsNullOrEmpty(a.gorsel3d)) spr = Resources.Load<Sprite>("Gorseller/" + a.gorsel3d);   // yeni görsel; yoksa eskiye düşer
+            Sprite spr = yeni3d;   // yeni görsel; yoksa eskiye düşer
             if (spr == null) spr = Resources.Load<Sprite>("Gorseller/Sahneler/" + a.gorsel);
             if (spr == null) spr = Resources.Load<Sprite>("Gorseller/" + a.gorsel);
             if (spr != null)
