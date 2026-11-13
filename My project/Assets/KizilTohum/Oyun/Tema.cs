@@ -156,10 +156,10 @@ namespace KizilTohum
         // Konumları buradan değiştir.
         public static readonly HaritaNoktaTanimi[] HaritaNoktalari =
         {
-            new HaritaNoktaTanimi("kubbe_sera",   "Ana Kubbe Serası", 0.190f, 0.42f, "KT08"),
+            new HaritaNoktaTanimi("kubbe_sera",   "Ana Kubbe Serası", 0.190f, 0.42f, "KT01"),
             new HaritaNoktaTanimi("laboratuvar",  "Laboratuvar",      0.400f, 0.29f, ""),
-            new HaritaNoktaTanimi("tohum_duvari", "Tohum Duvarı",     0.646f, 0.27f, "KT01"),
-            new HaritaNoktaTanimi("su_tanklari",  "Su Tankları",      0.835f, 0.32f, "KT04"),
+            new HaritaNoktaTanimi("tohum_duvari", "Tohum Duvarı",     0.646f, 0.27f, "KT04"),
+            new HaritaNoktaTanimi("su_tanklari",  "Su Tankları",      0.835f, 0.32f, "KT08"),
             new HaritaNoktaTanimi("komuta",       "Komuta Merkezi",   0.610f, 0.74f, ""),
             new HaritaNoktaTanimi("inis_pisti",   "İniş Pisti",       0.842f, 0.59f, ""),
             new HaritaNoktaTanimi("yol_kavsagi",  "Yol Kavşağı",      0.113f, 0.73f, ""),
