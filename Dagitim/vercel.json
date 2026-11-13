@@ -2,11 +2,11 @@
   "cleanUrls": false,
   "headers": [
     {
-      "source": "/Build/(.*)\.wasm",
+      "source": "/Build/(.*)[.]wasm",
       "headers": [{ "key": "Content-Type", "value": "application/wasm" }]
     },
     {
-      "source": "/Build/(.*)\.data",
+      "source": "/Build/(.*)[.]data",
       "headers": [{ "key": "Content-Type", "value": "application/octet-stream" }]
     }
   ]
