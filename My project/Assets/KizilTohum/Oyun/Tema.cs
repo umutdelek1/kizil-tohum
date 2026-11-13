@@ -139,7 +139,8 @@ namespace KizilTohum
         public const float HaritaNabizOlcek = 1.9f;
         public const float HaritaBilgiGenislik = 460f;
         public const float HaritaBilgiYukseklik = 120f;
-        public const float HaritaBilgiUzaklik = 70f;
+        public const float HaritaBilgiUzaklik = 24f;      // simgenin kenarından panele boşluk (panel simgenin yanında)
+        public const float HaritaSimgeNabizOlcek = 1.08f; // pin_acik sprite'ı: 1.0 → 1.08 hafif nabız
         public const string HaritaBaslik = "KOLONİ HARİTASI";
         public const string HaritaKapaliMetni = "Demoda kapalı";
 

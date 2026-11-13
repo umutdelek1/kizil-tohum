@@ -53,7 +53,8 @@ namespace KizilTohum
         class Nokta
         {
             public Tema.HaritaNoktaTanimi t;
-            public RectTransform kok, govde, nabiz;
+            public RectTransform kok, govde, vurus, nabiz;
+            public bool acikSpr, tamamSpr, kilitSpr;   // damla simgesi (sprite) var mı
             public Image nabizGorsel;
             public GameObject acikGorsel, tamamGorsel, kilitliGorsel;
             public Durum durum;
@@ -156,17 +157,18 @@ namespace KizilTohum
             var go = Bos("Nokta_" + t.id, dunya);
             n.kok = (RectTransform)go.transform;
             n.kok.anchorMin = n.kok.anchorMax = new Vector2(t.x, 1f - t.y);
-            n.kok.sizeDelta = new Vector2(Tema.HaritaNoktaBoyu, Tema.HaritaNoktaBoyu);
+            n.kok.sizeDelta = Vector2.zero;           // kök yalnızca nokta konumudur
             n.kok.anchoredPosition = Vector2.zero;
-            var vurus = go.AddComponent<Image>();   // şeffaf tıklama alanı
+            // şeffaf tıklama alanı: sprite'lı simgede pivot alt orta (sivri uç noktada), dairede merkez
+            n.vurus = NoktaRect(Bos("Vurus", n.kok));
+            var vurus = n.vurus.gameObject.AddComponent<Image>();
             vurus.color = Tema.Saydam;
-            var olay = go.AddComponent<HaritaNoktasi>();
+            var olay = n.vurus.gameObject.AddComponent<HaritaNoktasi>();
             olay.Girdi = () => { n.hover = true; BilgiGoster(n); };
             olay.Cikti = () => { n.hover = false; if (bilgiNokta == n) BilgiGizle(); };
             olay.Tiklandi = () => Tikla(n);
 
-            n.govde = (RectTransform)Bos("Govde", n.kok).transform;
-            Doldur(n.govde);
+            n.govde = NoktaRect(Bos("Govde", n.kok));
 
             // nabız halkası (yalnızca açık noktalarda görünür)
             var nb = Yuz("Nabiz", n.govde, Tema.Kehribar);
@@ -178,6 +180,7 @@ namespace KizilTohum
             n.acikGorsel = Bos("Acik", n.govde);
             Doldur((RectTransform)n.acikGorsel.transform);
             var pa = Spr("Harita/pin_acik");
+            n.acikSpr = pa != null;
             if (pa != null) Pin(n.acikGorsel.transform, pa);
             else
             {
@@ -189,6 +192,7 @@ namespace KizilTohum
             n.tamamGorsel = Bos("Tamam", n.govde);
             Doldur((RectTransform)n.tamamGorsel.transform);
             var pt = Spr("Harita/pin_tamam");
+            n.tamamSpr = pt != null;
             if (pt != null) Pin(n.tamamGorsel.transform, pt);
             else
             {
@@ -203,6 +207,7 @@ namespace KizilTohum
             n.kilitliGorsel = Bos("Kilitli", n.govde);
             Doldur((RectTransform)n.kilitliGorsel.transform);
             var pk = Spr("Harita/pin_kilitli");
+            n.kilitSpr = pk != null;
             if (pk != null) Pin(n.kilitliGorsel.transform, pk);
             else
             {
@@ -237,7 +242,12 @@ namespace KizilTohum
                 n.acikGorsel.SetActive(n.durum == Durum.Acik);
                 n.tamamGorsel.SetActive(n.durum == Durum.Tamam);
                 n.kilitliGorsel.SetActive(n.durum == Durum.Kilitli);
-                n.nabizGorsel.enabled = n.durum == Durum.Acik;
+                // damla simgesi: pivot (0.5, 0), sivri uç nokta konumunda, simge noktanın hemen üstünde; daire: merkez
+                bool sp = SimgeVar(n);
+                var pv = new Vector2(0.5f, sp ? 0f : 0.5f);
+                n.govde.pivot = pv; n.vurus.pivot = pv;
+                n.govde.anchoredPosition = Vector2.zero; n.vurus.anchoredPosition = Vector2.zero;
+                n.nabizGorsel.enabled = n.durum == Durum.Acik && !sp;   // sprite'lı açık simgede halka yerine ölçek nabzı
                 n.hover = false; n.olcek = 1f;
                 n.govde.localScale = Vector3.one;
             }
@@ -340,8 +350,11 @@ namespace KizilTohum
                 var n = noktalar[i];
                 float h = n.hover && !mesgul ? Tema.HaritaHoverOlcek : 1f;
                 n.olcek = Mathf.Lerp(n.olcek, h, 1f - Mathf.Exp(-Tema.HaritaOlcekHiz * dt));
-                n.govde.localScale = Vector3.one * n.olcek;
-                if (n.durum == Durum.Acik && n.nabiz != null)
+                float simgeNabzi = 1f;   // pin_acik: kehribar parıltı için ölçek 1.0 → 1.08
+                if (n.durum == Durum.Acik && n.acikSpr)
+                    simgeNabzi = Mathf.Lerp(1f, Tema.HaritaSimgeNabizOlcek, 0.5f - 0.5f * Mathf.Cos(nabizF * 2f * Mathf.PI));
+                n.govde.localScale = Vector3.one * (n.olcek * simgeNabzi);
+                if (n.durum == Durum.Acik && n.nabiz != null && !n.acikSpr)
                 {
                     float boy = Tema.HaritaNoktaBoyu * 0.55f * Mathf.Lerp(1f, Tema.HaritaNabizOlcek, nabizF);
                     n.nabiz.sizeDelta = new Vector2(boy, boy);
@@ -403,8 +416,9 @@ namespace KizilTohum
             bool sagda = n.t.x < 0.6f;
             bilgi.pivot = new Vector2(sagda ? 0f : 1f, 0.5f);
             float ol = canvas != null ? canvas.scaleFactor : 1f;
-            Vector3 p = n.kok.position;
-            p.x += (sagda ? 1f : -1f) * Tema.HaritaBilgiUzaklik * ol;
+            Vector3 p = n.govde.TransformPoint(n.govde.rect.center);   // simgenin ortası: panel üstüne değil yanına
+            float yarim = n.govde.rect.width * 0.5f * n.govde.lossyScale.x;
+            p.x += (sagda ? 1f : -1f) * (yarim + Tema.HaritaBilgiUzaklik * ol);
             bilgi.position = p;
         }
 
@@ -466,7 +480,22 @@ namespace KizilTohum
         {
             var im = Yuz("Pin", ata, Color.white);
             im.sprite = sp; im.preserveAspect = true; im.raycastTarget = false;
-            Ortala(im.rectTransform, Tema.HaritaNoktaBoyu);
+            Doldur(im.rectTransform);   // ata (Govde) 96x96; pivotu alt orta olduğundan simge noktanın üstünde durur
+        }
+
+        static bool SimgeVar(Nokta n)
+        {
+            return n.durum == Durum.Acik ? n.acikSpr : n.durum == Durum.Tamam ? n.tamamSpr : n.kilitSpr;
+        }
+
+        // Nokta konumunda 96x96 dikdörtgen; pivot Ac()'ta duruma göre ayarlanır.
+        static RectTransform NoktaRect(GameObject go)
+        {
+            var r = (RectTransform)go.transform;
+            r.anchorMin = r.anchorMax = new Vector2(0.5f, 0.5f);
+            r.sizeDelta = new Vector2(Tema.HaritaNoktaBoyu, Tema.HaritaNoktaBoyu);
+            r.anchoredPosition = Vector2.zero;
+            return r;
         }
 
         static void Ortala(RectTransform r, float boy)
