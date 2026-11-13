@@ -6,12 +6,17 @@ using UnityEngine.UI;
 namespace KizilTohum
 {
     /// <summary>
-    /// Bekçi Defteri: yalnızca okuma ekranı. Oyuncunun keşfettiği kavram kartlarını (KartKumesi) defter sayfası
-    /// üzerinde sayfa sayfa gösterir. Arka plan Bekci_Defteri/defter_sayfasi, yoksa defter_sayfa_bos.
+    /// Bekçi Defteri: yalnızca okuma ekranı. Oyuncunun keşfettiği kavram kartlarını (KartKumesi) defter görseli
+    /// üzerinde, kareli sayfa alanının içinde sayfa sayfa gösterir. Her kaydın arkasında sayfa renginde yarı saydam
+    /// zemin vardır; yazı kareli çizgileri kesmez. Arka plan Bekci_Defteri/defter_sayfasi (yoksa defter_sayfa_bos).
+    /// Başlık, sayaç ve sayfa düğmeleri defterin yanındaki boş masa alanındadır.
     /// </summary>
     public class DefterEkrani : MonoBehaviour
     {
-        const int Kolon = 2, Satir = 4, Sayfada = Kolon * Satir;
+        const int Satir = 4, Sayfada = Satir;
+
+        // kareli sayfa alanı (defter_sayfasi.png üzerinde, 1920x1080'e göre normalize; y aşağı doğru)
+        const float SayfaX0 = 0.255f, SayfaX1 = 0.615f, SayfaY0 = 0.19f, SayfaY1 = 0.80f;
 
         public Action GeriIstendi;
         public bool Acik { get { return kok != null && kok.gameObject.activeSelf; } }
@@ -23,6 +28,7 @@ namespace KizilTohum
         Button onceki, sonraki;
         readonly List<Kart> kartlar = new List<Kart>();
         int sayfa;
+        bool kareliSayfa;
 
         public void Kur(RectTransform ust, Font f, Font fk, Font fb, GorevYoneticisi yonetici)
         {
@@ -33,7 +39,8 @@ namespace KizilTohum
             var zemin = go.AddComponent<Image>();   // arkadaki arayüzü tıklamaya kapatır
             zemin.color = Tema.Base;
 
-            var sp = Resources.Load<Sprite>("Gorseller/Bekci_Defteri/defter_sayfasi");
+            var sp = Resources.Load<Sprite>("Gorseller/Defter/defter_sayfasi");
+            kareliSayfa = sp != null;
             if (sp == null) sp = Resources.Load<Sprite>("Gorseller/Bekci_Defteri/defter_sayfa_bos");
             if (sp != null)
             {
@@ -45,26 +52,36 @@ namespace KizilTohum
                 oran.aspectRatio = sp.rect.width / Mathf.Max(1f, sp.rect.height);
             }
 
-            var baslik = Yazi("Baslik", kok, Tema.YaziBaslik, Tema.DefterBaslik, TextAnchor.MiddleCenter, fontBaslik);
+            // sağdaki boş masa alanı: ikon, başlık, sayaç, sayfa düğmeleri
+            var ikon = Resources.Load<Sprite>("Gorseller/Ikonlar/ikon_defter");
+            if (ikon != null)
+            {
+                var ii = Yuz("Ikon", kok, Color.white);
+                ii.sprite = ikon; ii.preserveAspect = true; ii.raycastTarget = false;
+                Konum(ii.rectTransform, 0.72f, 0.64f, 0.90f, 0.86f);
+            }
+            var baslik = Yazi("Baslik", kok, Tema.YaziBaslik, Tema.Marka, TextAnchor.MiddleCenter, fontBaslik);
             baslik.text = "BEKÇİ DEFTERİ";
-            Konum(baslik.rectTransform, 0.25f, 0.88f, 0.75f, 0.98f);
-            sayac = Yazi("Sayac", kok, Tema.YaziOrta, Tema.DefterMurekkep, TextAnchor.MiddleRight, fontKalin);
-            Konum(sayac.rectTransform, 0.62f, 0.88f, 0.95f, 0.98f);
+            Konum(baslik.rectTransform, 0.64f, 0.52f, 0.98f, 0.62f);
+            sayac = Yazi("Sayac", kok, Tema.YaziOrta, Tema.Beyaz, TextAnchor.MiddleCenter, fontKalin);
+            Konum(sayac.rectTransform, 0.64f, 0.44f, 0.98f, 0.51f);
 
             alan = (RectTransform)Bos("Alan", kok).transform;
-            Konum(alan, 0.07f, 0.12f, 0.93f, 0.87f);
+            if (kareliSayfa) Konum(alan, SayfaX0, 1f - SayfaY1, SayfaX1, 1f - SayfaY0);
+            else Konum(alan, 0.07f, 0.12f, 0.93f, 0.87f);
             bos = Yazi("Bos", kok, Tema.YaziOrta, Tema.DefterMurekkep, TextAnchor.MiddleCenter, font);
             bos.text = "Henüz kayıt yok.\nSoruları yanıtladıkça öğrendiğin kurallar buraya yazılır.";
-            Konum(bos.rectTransform, 0.2f, 0.35f, 0.8f, 0.65f);
+            if (kareliSayfa) Konum(bos.rectTransform, SayfaX0 + 0.02f, 0.40f, SayfaX1 - 0.02f, 0.60f);
+            else Konum(bos.rectTransform, 0.2f, 0.35f, 0.8f, 0.65f);
 
             var geri = DugmeYap("Geri", "‹ Geri", 0.02f, 0.89f, 0.14f, 0.97f);
             geri.onClick.AddListener(() => { if (GeriIstendi != null) GeriIstendi(); });
-            onceki = DugmeYap("Onceki", "‹", 0.40f, 0.03f, 0.46f, 0.10f);
-            sonraki = DugmeYap("Sonraki", "›", 0.54f, 0.03f, 0.60f, 0.10f);
+            onceki = DugmeYap("Onceki", "‹", 0.72f, 0.30f, 0.78f, 0.37f);
+            sonraki = DugmeYap("Sonraki", "›", 0.84f, 0.30f, 0.90f, 0.37f);
             onceki.onClick.AddListener(() => { sayfa = Mathf.Max(0, sayfa - 1); Ciz(); });
             sonraki.onClick.AddListener(() => { sayfa++; Ciz(); });
-            sayfaYazi = Yazi("SayfaNo", kok, Tema.YaziKucuk, Tema.DefterMurekkep, TextAnchor.MiddleCenter, fontKalin);
-            Konum(sayfaYazi.rectTransform, 0.46f, 0.03f, 0.54f, 0.10f);
+            sayfaYazi = Yazi("SayfaNo", kok, Tema.YaziKucuk, Tema.Beyaz, TextAnchor.MiddleCenter, fontKalin);
+            Konum(sayfaYazi.rectTransform, 0.78f, 0.30f, 0.84f, 0.37f);
 
             go.SetActive(false);
         }
@@ -93,28 +110,32 @@ namespace KizilTohum
             int sayfaSayisi = Mathf.Max(1, Mathf.CeilToInt(kartlar.Count / (float)Sayfada));
             sayfa = Mathf.Clamp(sayfa, 0, sayfaSayisi - 1);
             bos.gameObject.SetActive(kartlar.Count == 0);
-            sayfaYazi.text = (sayfa + 1) + " / " + sayfaSayisi;
+            sayfaYazi.text = (sayfa + 1) + "/" + sayfaSayisi;
             onceki.gameObject.SetActive(sayfa > 0);
             sonraki.gameObject.SetActive(sayfa < sayfaSayisi - 1);
             sayfaYazi.gameObject.SetActive(sayfaSayisi > 1);
 
-            float gen = 1f / Kolon, yuk = 1f / Satir;
+            float yuk = 1f / Satir;
             for (int i = 0; i < Sayfada; i++)
             {
                 int ix = sayfa * Sayfada + i;
                 if (ix >= kartlar.Count) break;
                 var k = kartlar[ix];
-                int c = i % Kolon, r = i / Kolon;
                 var hucre = (RectTransform)Bos("Kayit" + ix, alan).transform;
-                Konum(hucre, c * gen, 1f - (r + 1) * yuk, (c + 1) * gen, 1f - r * yuk);
+                Konum(hucre, 0f, 1f - (i + 1) * yuk, 1f, 1f - i * yuk);
+                // sayfa renginde yarı saydam zemin: kareli çizgiler yazının arkasında kaybolur
+                var zm = Yuz("Zemin", hucre, Tema.DefterZemin);
+                zm.raycastTarget = false;
+                Konum(zm.rectTransform, 0f, 0f, 1f, 1f);
+                zm.rectTransform.offsetMin = new Vector2(4f, 4f); zm.rectTransform.offsetMax = new Vector2(-4f, -4f);
                 var t = Yazi("Baslik", hucre, Tema.YaziOrta, Tema.DefterBaslik, TextAnchor.UpperLeft, fontKalin);
                 t.text = k.baslik;
                 Konum(t.rectTransform, 0f, 0.74f, 1f, 1f);
-                t.rectTransform.offsetMin = new Vector2(18f, 0f); t.rectTransform.offsetMax = new Vector2(-18f, 0f);
+                t.rectTransform.offsetMin = new Vector2(14f, 0f); t.rectTransform.offsetMax = new Vector2(-14f, -6f);
                 var m = Yazi("Metin", hucre, Tema.YaziKucuk, Tema.DefterMurekkep, TextAnchor.UpperLeft, font);
                 m.text = k.metin;
                 Konum(m.rectTransform, 0f, 0f, 1f, 0.74f);
-                m.rectTransform.offsetMin = new Vector2(18f, 6f); m.rectTransform.offsetMax = new Vector2(-18f, 0f);
+                m.rectTransform.offsetMin = new Vector2(14f, 6f); m.rectTransform.offsetMax = new Vector2(-14f, 0f);
             }
         }
 

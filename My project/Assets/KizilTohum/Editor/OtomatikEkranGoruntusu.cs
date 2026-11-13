@@ -345,12 +345,45 @@ namespace KizilTohum.Editor
                 if (sonuc != null && sonuc.dogru) break;
             }
 
+            // l) KT08: Ada (saskin), Okan, Lin (normal / yanlış / doğru) ve yeni sahneler
+            Cagir("VideoIptal");
+            Cagir("GorevAc", "KT08");
+            yield return 0.5f;
+            Cagir("VideoIptal");
+            foreach (var id8 in new[] { "KT08-2", "KT08-4", "KT08-6", "KT08-10", "KT08-S1", "KT08-13", "KT08-17", "KT08-21", "KT08-22" })
+            {
+                string hedefId = id8;
+                foreach (var x in Gec(a => a.id == hedefId)) yield return x;
+                yield return 2.6f; KartKapat();
+                if (hedefId == "KT08-S1")
+                {
+                    int nSec = Yonetici.AktifAdim != null ? Yonetici.AktifAdim.secenekler.Count : 0;
+                    for (int si = nSec - 1; si >= 0 && Yonetici.AktifAdim != null && Yonetici.AktifAdim.id == "KT08-S1"; si--)   // ters sıra: önce yanlış
+                    {
+                        var sonuc = Yonetici.CevapVer(si);
+                        yield return 1.2f; KartKapat();
+                        Cek("30_lin_cevap_" + si + (sonuc != null && sonuc.dogru ? "_dogru" : "_yanlis"));
+                        yield return 0.4f;
+                        if (sonuc != null && sonuc.dogru) break;
+                    }
+                }
+                else
+                {
+                    Cek("30_kt08_" + hedefId.Substring(5));
+                    yield return 0.4f;
+                }
+            }
+
             // k) final ekranı (en iyi son: final_fidan_3d) ve Bekçi Defteri
             var ic = Yonetici.Icerik;
             var son = new OyunSonu { son = ic.sonlar[0], saglik = 100 };
             Cagir("SonGoster", son);
             yield return 1.5f;
             Cek("21_final_yesil_kubbe");
+            yield return 0.4f;
+            Cagir("SonGoster", new OyunSonu { son = ic.sonlar[2], saglik = 40 });
+            yield return 1.5f;
+            Cek("23_final_tek_cekmece");
             yield return 0.4f;
             Cagir("GorevAc", "KT01");
             yield return 0.4f;

@@ -74,6 +74,7 @@ namespace KizilTohum
         Font font, fontKalin, fontBaslik;
         RectTransform kok, dunya, bilgi;
         Image arkaA, arkaB, karart;
+        Image bilgiIkon;
         Text sayac, bilgiYer, bilgiGorev;
         Canvas canvas;
         readonly List<Nokta> noktalar = new List<Nokta>();
@@ -117,6 +118,13 @@ namespace KizilTohum
             bg.raycastTarget = false;
             bilgi.anchorMin = bilgi.anchorMax = new Vector2(0.5f, 0.5f);
             bilgi.sizeDelta = new Vector2(Tema.HaritaBilgiGenislik, Tema.HaritaBilgiYukseklik);
+            bilgiIkon = Yuz("Ikon", bilgi, Color.white);
+            bilgiIkon.preserveAspect = true; bilgiIkon.raycastTarget = false;
+            bilgiIkon.rectTransform.anchorMin = bilgiIkon.rectTransform.anchorMax = new Vector2(0f, 0.5f);
+            bilgiIkon.rectTransform.pivot = new Vector2(0f, 0.5f);
+            bilgiIkon.rectTransform.sizeDelta = new Vector2(Tema.IkonMenu, Tema.IkonMenu);
+            bilgiIkon.rectTransform.anchoredPosition = new Vector2(Tema.MetinSag - 8f, 0f);
+            bilgiIkon.enabled = false;
             bilgiYer = Yazi("Yer", bilgi, Tema.YaziOrta, Tema.Konusan, TextAnchor.MiddleLeft, fontKalin);
             Konum(bilgiYer.rectTransform, 0, 0.5f, 1, 0.9f, Tema.MetinSag, 0, -Tema.MetinSag, 0);
             bilgiGorev = Yazi("Gorev", bilgi, Tema.YaziKucuk, Tema.Beyaz, TextAnchor.MiddleLeft, font);
@@ -128,7 +136,19 @@ namespace KizilTohum
             Konum(cubuk.rectTransform, 0, 1, 1, 1, 0, -90, 0, 0);
             cubuk.raycastTarget = false;
             sayac = Yazi("Sayac", cubuk.transform, Tema.YaziOrta, Tema.Beyaz, TextAnchor.MiddleLeft, fontKalin);
-            Konum(sayac.rectTransform, 0, 0, 0.3f, 1, 30, 0, 0, 0);
+            var di = Spr("Ikonlar/ikon_defter");
+            float sayacSol = 30f;
+            if (di != null)
+            {
+                var dim = Yuz("DefterIkon", cubuk.transform, Color.white);
+                dim.sprite = di; dim.preserveAspect = true; dim.raycastTarget = false;
+                dim.rectTransform.anchorMin = dim.rectTransform.anchorMax = new Vector2(0f, 0.5f);
+                dim.rectTransform.pivot = new Vector2(0f, 0.5f);
+                dim.rectTransform.sizeDelta = new Vector2(Tema.IkonKucuk + 8f, Tema.IkonKucuk + 8f);
+                dim.rectTransform.anchoredPosition = new Vector2(24f, 0f);
+                sayacSol = 24f + Tema.IkonKucuk + 8f + 12f;
+            }
+            Konum(sayac.rectTransform, 0, 0, 0.3f, 1, sayacSol, 0, 0, 0);
             var baslik = Yazi("Baslik", cubuk.transform, Tema.YaziBaslik, Tema.Marka, TextAnchor.MiddleCenter, fontBaslik);
             baslik.text = Tema.HaritaBaslik;
             Konum(baslik.rectTransform, 0.3f, 0, 0.7f, 1, 0, 0, 0, 0);
@@ -388,6 +408,13 @@ namespace KizilTohum
             if (mesgul) return;
             bilgiNokta = n;
             bilgiYer.text = n.t.yer;
+            // ikon: kilitli → kilit; açık/tamam → görev konusu (menüdeki ikonlarla aynı)
+            string ik = n.durum == Durum.Kilitli ? "ikon_kilit" : n.t.gorevId == "KT01" ? "ikon_mikroskop" : n.t.gorevId == "KT04" ? "ikon_su_bitki" : "ikon_dna";
+            var isp = Spr("Ikonlar/" + ik);
+            bilgiIkon.sprite = isp; bilgiIkon.enabled = isp != null;
+            float solBosluk = isp != null ? Tema.MetinSag + Tema.IkonMenu : Tema.MetinSag;
+            bilgiYer.rectTransform.offsetMin = new Vector2(solBosluk, 0f);
+            bilgiGorev.rectTransform.offsetMin = new Vector2(solBosluk, 0f);
             if (n.durum == Durum.Kilitli) { bilgiGorev.text = Tema.HaritaKapaliMetni; bilgiGorev.color = Tema.Soluk; }
             else
             {

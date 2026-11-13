@@ -144,6 +144,11 @@ namespace KizilTohum
         // ---------- Bekçi Defteri (kâğıt üstü mürekkep renkleri) ----------
         public static readonly Color DefterMurekkep = Hex("2B1F14");
         public static readonly Color DefterBaslik = Hex("7A2E12");
+        public static readonly Color DefterZemin = Hex("D8CCAE", 0.92f);   // kayıt arkası: sayfa renginde yarı saydam
+
+        // ---------- ikonlar ----------
+        public const float IkonMenu = 48f;
+        public const float IkonKucuk = 40f;
 
         // ---------- koloni haritası ----------
         public static readonly Color Kehribar = Hex("FFB347");
