@@ -141,6 +141,10 @@ namespace KizilTohum
         public const float AltSatirKenar = 16f;
         public const float SimPanelAralik = 0.02f;
 
+        // ---------- Bekçi Defteri (kâğıt üstü mürekkep renkleri) ----------
+        public static readonly Color DefterMurekkep = Hex("2B1F14");
+        public static readonly Color DefterBaslik = Hex("7A2E12");
+
         // ---------- koloni haritası ----------
         public static readonly Color Kehribar = Hex("FFB347");
         public static readonly string[] HaritaResimleri = { "Harita/harita_gunduz", "Harita/harita_gunbatimi", "Harita/harita_gece" }; // 0 / 1 / 2+ tamamlanan görev

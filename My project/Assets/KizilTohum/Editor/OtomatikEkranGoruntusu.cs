@@ -321,6 +321,52 @@ namespace KizilTohum.Editor
                 Cek("18_dalis_" + id + "_sonrasi");
                 yield return 0.4f;
             }
+
+            // j) Ada portreleri: normal (KT01-3), yanlış ve doğru cevap (KT04-S3)
+            Cagir("VideoIptal");
+            Cagir("GorevAc", "KT01");
+            yield return 0.5f;
+            Cagir("VideoIptal");
+            foreach (var x in Gec(a => a.id == "KT01-3")) yield return x;
+            yield return 2.5f; KartKapat();
+            Cek("19_ada_normal");
+            yield return 0.4f;
+            Cagir("GorevAc", "KT04");
+            yield return 0.5f;
+            Cagir("VideoIptal");
+            foreach (var x in Gec(a => a.id == "KT04-S3")) yield return x;
+            yield return 1.5f; KartKapat();
+            for (int si = 0; si < 3 && Yonetici.AktifAdim != null && Yonetici.AktifAdim.id == "KT04-S3"; si++)
+            {
+                var sonuc = Yonetici.CevapVer(si);
+                yield return 1.2f; KartKapat();
+                Cek("20_ada_cevap_" + si + (sonuc != null && sonuc.dogru ? "_dogru" : "_yanlis"));
+                yield return 0.4f;
+                if (sonuc != null && sonuc.dogru) break;
+            }
+
+            // k) final ekranı (en iyi son: final_fidan_3d) ve Bekçi Defteri
+            var ic = Yonetici.Icerik;
+            var son = new OyunSonu { son = ic.sonlar[0], saglik = 100 };
+            Cagir("SonGoster", son);
+            yield return 1.5f;
+            Cek("21_final_yesil_kubbe");
+            yield return 0.4f;
+            Cagir("GorevAc", "KT01");
+            yield return 0.4f;
+            Cagir("VideoIptal");
+            var ui = Arayuz;
+            var df = typeof(KizilTohumArayuz).GetField("defter", BindingFlags.Instance | BindingFlags.NonPublic);
+            var d = ui != null && df != null ? df.GetValue(ui) as DefterEkrani : null;
+            if (d == null) Not("Defter ekranı bulunamadı");
+            else
+            {
+                d.Ac();
+                yield return 1.5f;
+                Cek("22_defter");
+                yield return 0.4f;
+                d.Kapat();
+            }
             yield return 1.5f;
         }
 

@@ -46,6 +46,7 @@ namespace KizilTohum
         System.Action<bool> videoBitince; // harita dalış videosu için: true = oynatılamadı
 
         HaritaEkrani harita;
+        DefterEkrani defter;
         HucreGorunumu hucre;   // KT04: üç görselin çapraz erimesi (görseller yoksa null, eski çizim)
         bool hucreDenendi;
 
@@ -113,7 +114,7 @@ namespace KizilTohum
             }
             Kur();
             Bagla();
-            oyun.KlavyeKilitli = () => DaktiloKilidi() || (harita != null && harita.Acik) || menu.activeSelf || kartPaneli.activeSelf || sonEkrani.activeSelf
+            oyun.KlavyeKilitli = () => DaktiloKilidi() || (harita != null && harita.Acik) || (defter != null && defter.Acik) || menu.activeSelf || kartPaneli.activeSelf || sonEkrani.activeSelf
                 || videoKok != null || Time.frameCount == videoKapandiKare;
             string derin = OyunDenetleyici.DerinBaglantiGorevi();
             if (!string.IsNullOrEmpty(derin) && oyun.GoreveGit(derin)) Goster(false);
@@ -387,11 +388,12 @@ namespace KizilTohum
             }
             Konum(baslik.rectTransform, 0.05f, 0.76f, 0.45f, 0.95f, 0, 0, 0, 0);
 
-            MenuDugme("Yeni Oyun", 0.50f, Tema.YaziOrta, () => { HaritaKayit.Sifirla(); KartKumesi.Sifirla(); oyun.YeniOyun(); HaritaAc(); }); // tüm ilerleme sıfırlanır; harita gündüze döner
-            MenuDugme("Devam Et", 0.41f, Tema.YaziOrta, () => { if (oyun.KayitVarMi && oyun.DevamEt()) { Uygula(); Goster(false); } });
-            MenuDugme("Görev 1 · Yüz Çekmece", 0.32f, Tema.YaziKucuk, () => GorevAc("KT01"));
-            MenuDugme("Görev 2 · Islak Toprakta Susuzluk", 0.245f, Tema.YaziKucuk, () => GorevAc("KT04"));
-            MenuDugme("Görev 3 · Kırk Yedi", 0.16f, Tema.YaziKucuk, () => GorevAc("KT08"));
+            MenuDugme("Yeni Oyun", 0.55f, Tema.YaziOrta, () => { HaritaKayit.Sifirla(); KartKumesi.Sifirla(); oyun.YeniOyun(); HaritaAc(); }); // tüm ilerleme sıfırlanır; harita gündüze döner
+            MenuDugme("Devam Et", 0.46f, Tema.YaziOrta, () => { if (oyun.KayitVarMi && oyun.DevamEt()) { Uygula(); Goster(false); } });
+            MenuDugme("Görev 1 · Yüz Çekmece", 0.375f, Tema.YaziKucuk, () => GorevAc("KT01"));
+            MenuDugme("Görev 2 · Islak Toprakta Susuzluk", 0.30f, Tema.YaziKucuk, () => GorevAc("KT04"));
+            MenuDugme("Görev 3 · Kırk Yedi", 0.225f, Tema.YaziKucuk, () => GorevAc("KT08"));
+            MenuDugme("Bekçi Defteri", 0.15f, Tema.YaziKucuk, () => { if (defter != null) defter.Ac(); });
             Text zt;
             var zb = Dugme("Zorluk", menu.transform, "Zorluk: Normal", Tema.KontrolAlt, out zt, "secenek_butonu_normal_9slice");
             zt.fontSize = Tema.YaziKucuk;
@@ -415,6 +417,11 @@ namespace KizilTohum
             harita.GorevSecildi = HaritaGorevSecildi;
             harita.MenuIstendi = () => { harita.Kapat(); Goster(true); };
             harita.VideoOynat = (dosya, bitince) => VideoOynat(dosya, harita.Kok, true, bitince);
+
+            // Bekçi Defteri: yalnızca okuma ekranı, menüden açılır
+            defter = gameObject.AddComponent<DefterEkrani>();
+            defter.Kur(kok, font, fontKalin, fontBaslik, y);
+            defter.GeriIstendi = () => defter.Kapat();
         }
 
         // ---------- koloni haritası ----------
@@ -906,18 +913,25 @@ namespace KizilTohum
             VideoBitir();
         }
 
-        void PortreSec(string konusan, string durum)
+        void PortreSec(string konusan, string durum, string ifade = null)
         {
             string ad = null;
             if (!string.IsNullOrEmpty(konusan))
             {
                 string k = konusan.ToLowerInvariant();
-                if (k.Contains("ada")) ad = "Portreler/" + (durum == "yanlis" ? "ada_endiseli" : durum == "dogru" ? "ada_gulumseyen" : "ada_dusunceli");
+                if (k.Contains("ada"))
+                {
+                    // yeni Ada görselleri (Ada/); adımda "ada" alanı varsa o ifade, yoksa duruma göre
+                    string e = !string.IsNullOrEmpty(ifade) ? ifade : durum == "yanlis" ? "endiseli" : durum == "dogru" ? "sevincli" : "normal";
+                    ad = "Ada/ada_" + e;
+                }
                 else if (k.Contains("okan")) ad = "Portreler/" + (durum == "yanlis" ? "okan_kizgin" : durum == "dogru" ? "okan_rahatlamis" : "okan_notr");
                 else if (k.Contains("lin")) ad = "Portreler/lin_portre";
                 else if (k.Contains("tohum")) ad = "Mercek/" + (durum == "yanlis" ? "mercek_uyari" : "mercek_normal");
             }
             Sprite sp = ad != null ? Resources.Load<Sprite>("Gorseller/" + ad) : null;
+            if (sp == null && ad != null && ad.StartsWith("Ada/"))   // yeni görsel yoksa eski Ada dosyaları yedek
+                sp = Resources.Load<Sprite>("Gorseller/Portreler/" + (durum == "yanlis" ? "ada_endiseli" : durum == "dogru" ? "ada_gulumseyen" : "ada_dusunceli"));
             if (sp == null && ad == "Portreler/okan_kizgin") sp = Resources.Load<Sprite>("Gorseller/Portreler/okan_sert");
             if (sp == null && ad == "Portreler/okan_rahatlamis") sp = Resources.Load<Sprite>("Gorseller/Portreler/okan_notr");
             portre.gameObject.SetActive(sp != null);
@@ -957,7 +971,7 @@ namespace KizilTohum
             gorevBaslik.text = s.gorev.id + " · " + s.gorev.baslik + "   (" + s.adimNo + "/" + s.toplamAdim + ")";
             konusanYazi.text = string.IsNullOrEmpty(s.adim.konusan) ? "" : s.adim.konusan;
             DaktiloBaslat(s.adim.metin ?? "");
-            PortreSec(s.adim.konusan, null);
+            PortreSec(s.adim.konusan, null, s.adim.ada);
             PortreGiris(s.adim.konusan);
             panelT = 0f; PanelUygula();
             tepkiYazi.text = ""; ipucuYazi.text = ""; linYazi.text = "";
@@ -1234,7 +1248,9 @@ namespace KizilTohum
         void SonGoster(OyunSonu o)
         {
             sonEkrani.SetActive(true);
-            var sz = (o.son != null && !string.IsNullOrEmpty(o.son.gorsel)) ? Spr("Sahneler/" + o.son.gorsel) : null;
+            Sprite sz = null;
+            if (o.son != null && !string.IsNullOrEmpty(o.son.gorsel3d)) sz = Spr(o.son.gorsel3d);   // 3D final; yoksa eskisi
+            if (sz == null && o.son != null && !string.IsNullOrEmpty(o.son.gorsel)) sz = Spr("Sahneler/" + o.son.gorsel);
             if (sz != null) { sonZemin.sprite = sz; sonZemin.color = Tema.SonTon; }
             KartKumesi.Birlestir(y.AcilanKartlar);
             string m = o.son != null ? o.son.ad + "\n\n" + o.son.metin : "";

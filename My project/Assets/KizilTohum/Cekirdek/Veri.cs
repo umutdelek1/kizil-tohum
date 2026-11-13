@@ -35,6 +35,7 @@ namespace KizilTohum
         public int min;      // sağlık >= min ise bu son
         public string metin;
         public string gorsel;
+        public string gorsel3d;    // Resources/Gorseller/ altında yol; yoksa gorsel kullanılır
     }
 
     [Serializable]
@@ -121,6 +122,7 @@ namespace KizilTohum
         public float kameraSure;   // sn; 0 ise Tema.KameraSure
         public string gecis;       // GecisTipi; boşsa capraz
         public string video;       // StreamingAssets/Video/ altındaki dosya adı
+        public string ada;         // Ada'nın bu adımdaki ifadesi: normal | sevincli | endiseli | endiseli_hafif | saskin (boşsa duruma göre)
         public string gorsel3d;    // Resources/Gorseller/ altında yol (örn. Sahneler3D/sarkik_bitki_3d); yoksa/yüklenemezse "gorsel" kullanılır
         public float kameraOlcek;  // tek resimli sahnede hedef ölçek (0 ise Tema.KenBurnsOlcek)
         public float odakX, odakY; // zoom odağı, normalize (sol-üst 0,0); ikisi de 0 ise ekran merkezi
