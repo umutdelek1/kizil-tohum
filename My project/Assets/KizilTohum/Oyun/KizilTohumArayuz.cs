@@ -131,7 +131,10 @@ namespace KizilTohum
         void Update()
         {
             Hareket(Time.unscaledDeltaTime);
-            if (puanYazi != null) puanYazi.text = y.DefterPuani.ToString();
+            if (puanYazi != null)
+            {
+                puanYazi.text = y.DefterPuani.ToString();
+            }
             if (ipucuKutu != null) ipucuKutu.enabled = !string.IsNullOrEmpty(ipucuYazi.text);
             if (linKutu != null) linKutu.enabled = !string.IsNullOrEmpty(linYazi.text);
             if (menu != null && menu.activeSelf && menuKatman.Count > 0)
@@ -351,7 +354,7 @@ namespace KizilTohum
             // madalya: panelin solunda, sona göre değişir (SonGoster'da doldurulur)
             sonMadalya = Yuz("Madalya", sonEkrani.transform, Color.white);
             sonMadalya.preserveAspect = true; sonMadalya.raycastTarget = false;
-            Konum(sonMadalya.rectTransform, 0.14f, 0.28f, 0.42f, 0.72f, 0, 0, 0, 0);
+            Konum(sonMadalya.rectTransform, 0.05f, 0.28f, 0.37f, 0.72f, 0, 0, 0, 0);   // panelin (x 0.52) soluna sığar, altına girmez
             sonMadalya.enabled = false;
             sonEkrani.SetActive(false);
 
@@ -537,6 +540,7 @@ namespace KizilTohum
 
         // ---------- üst çubuk: puan, ses, tam ekran ----------
         Text puanYazi;
+        RectTransform puanKap;
         Image sesIkon;
         bool sesKapali;
 
@@ -545,7 +549,9 @@ namespace KizilTohum
             // puan (defter puanı): yıldız ikonu + sayı
             var yi = Spr("Ikonlar/ikon_yildiz");
             var pk = Bos("Puan", ust);
-            Konum((RectTransform)pk.transform, 0.31f, 0.2f, 0.39f, 0.8f, 0, 0, 0, 0);
+            puanKap = (RectTransform)pk.transform;
+            // sabit konum: en uzun görev başlığının (≈%30 genişlik) sağında, çubuk ikonundan önce
+            puanKap.anchorMin = new Vector2(0.345f, 0.2f); puanKap.anchorMax = new Vector2(0.43f, 0.8f); puanKap.offsetMin = puanKap.offsetMax = Vector2.zero;
             if (yi != null)
             {
                 var pi = Yuz("PuanIkon", pk.transform, Color.white);

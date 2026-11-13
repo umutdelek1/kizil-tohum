@@ -58,13 +58,16 @@ namespace KizilTohum
             {
                 var ii = Yuz("Ikon", kok, Color.white);
                 ii.sprite = ikon; ii.preserveAspect = true; ii.raycastTarget = false;
-                Konum(ii.rectTransform, 0.72f, 0.64f, 0.90f, 0.86f);
+                Konum(ii.rectTransform, 0.72f, 0.62f, 0.90f, 0.86f);
             }
+            var bz = Yuz("BaslikZemin", kok, new Color(0.07f, 0.06f, 0.06f, 0.6f));   // başlığın arkasında koyu yarı saydam zemin
+            bz.raycastTarget = false;
+            Konum(bz.rectTransform, 0.65f, 0.49f, 0.97f, 0.59f);
             var baslik = Yazi("Baslik", kok, Tema.YaziBaslik, Tema.Marka, TextAnchor.MiddleCenter, fontBaslik);
             baslik.text = "BEKÇİ DEFTERİ";
-            Konum(baslik.rectTransform, 0.64f, 0.52f, 0.98f, 0.62f);
+            Konum(baslik.rectTransform, 0.65f, 0.49f, 0.97f, 0.59f);
             sayac = Yazi("Sayac", kok, Tema.YaziOrta, Tema.Beyaz, TextAnchor.MiddleCenter, fontKalin);
-            Konum(sayac.rectTransform, 0.64f, 0.44f, 0.98f, 0.51f);
+            Konum(sayac.rectTransform, 0.64f, 0.40f, 0.98f, 0.47f);
 
             alan = (RectTransform)Bos("Alan", kok).transform;
             if (kareliSayfa) Konum(alan, SayfaX0, 1f - SayfaY1, SayfaX1, 1f - SayfaY0);
