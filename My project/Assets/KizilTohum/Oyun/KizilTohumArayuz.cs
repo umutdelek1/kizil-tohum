@@ -41,6 +41,28 @@ namespace KizilTohum
         Coroutine videoZaman;
         int videoKapandiKare = -1;
 
+        // arayüz hareketi (hepsi Update'te unscaledDeltaTime ile akar)
+        string metinTam = "";
+        float daktiloT;
+        bool daktiloAkiyor;
+        int daktiloGorunen = -1;
+        CanvasGroup altGrup;
+        RectTransform altRect;
+        float panelT = 999f;
+        RectTransform portreRect;
+        Vector2 portreTaban;
+        float portreT = 999f, portreParlamaT = 999f;
+        string sonKonusan;
+        RectTransform duvarKapRect;
+        Image duvarKapGorsel;
+        float duvarSarsintiT = 999f;
+        float duvarParlamaT = 999f;
+        float duvarGoster = -1f, duvarKaynak, duvarHedef = -1f, duvarKaymaT = 999f;
+        RectTransform kartKok;
+        CanvasGroup kartGrup;
+        Image kartPaneliGorsel;
+        float kartT = 999f;
+
         bool duvarSpriteli;
         readonly List<RectTransform> menuKatman = new List<RectTransform>();
         OyunDenetleyici oyun;
@@ -83,7 +105,7 @@ namespace KizilTohum
             }
             Kur();
             Bagla();
-            oyun.KlavyeKilitli = () => menu.activeSelf || kartPaneli.activeSelf || sonEkrani.activeSelf
+            oyun.KlavyeKilitli = () => DaktiloKilidi() || menu.activeSelf || kartPaneli.activeSelf || sonEkrani.activeSelf
                 || videoKok != null || Time.frameCount == videoKapandiKare;
             string derin = OyunDenetleyici.DerinBaglantiGorevi();
             if (!string.IsNullOrEmpty(derin) && oyun.GoreveGit(derin)) Goster(false);
@@ -92,6 +114,7 @@ namespace KizilTohum
 
         void Update()
         {
+            Hareket(Time.unscaledDeltaTime);
             if (ipucuKutu != null) ipucuKutu.enabled = !string.IsNullOrEmpty(ipucuYazi.text);
             if (linKutu != null) linKutu.enabled = !string.IsNullOrEmpty(linYazi.text);
             if (menu != null && menu.activeSelf && menuKatman.Count > 0)
@@ -164,6 +187,7 @@ namespace KizilTohum
             gorevBaslik.font = fontBaslik;
             Konum(gorevBaslik.rectTransform, 0, 0, 0.6f, 1, 30, 0, 0, 0);
             var duvarKap = Yuz("DuvarKap", ust.transform, Tema.Kontrol);
+            duvarKapGorsel = duvarKap; duvarKapRect = duvarKap.rectTransform;
             Konum(duvarKap.rectTransform, 0.5f, 0.3f, 0.88f, 0.7f, 0, 0, 0, 0);
             var cerceve = Spr("Arayuz/tohum_duvari_cubuk_cercevesi");
             var dolgu = Spr("Arayuz/tohum_duvari_cubuk_dolgu");
@@ -180,9 +204,16 @@ namespace KizilTohum
             var alt = Yuz("Alt", oyunEkrani.transform, Tema.Panel);
             Kaplama(alt, "diyalog_paneli_9slice", Tema.Panel);
             Konum(alt.rectTransform, 0, 0, 1, 0.46f, 0, 0, 0, 0);
+            altRect = alt.rectTransform;
+            altGrup = alt.gameObject.AddComponent<CanvasGroup>();
+            var altTik = alt.gameObject.AddComponent<Button>(); // panele tıklayınca daktilo hemen tamamlanır
+            altTik.transition = Selectable.Transition.None;
+            altTik.targetGraphic = alt;
+            altTik.onClick.AddListener(() => DaktiloTamamla());
             portre = Yuz("Portre", oyunEkrani.transform, Color.white);
             portre.preserveAspect = true; portre.raycastTarget = false;
             Konum(portre.rectTransform, 0.01f, 0.46f, 0.20f, 0.46f, 0, 0, 0, 400);
+            portreRect = portre.rectTransform; portreTaban = portreRect.anchoredPosition;
             portre.gameObject.SetActive(false);
             konusanYazi = Yazi("Konusan", alt.transform, Tema.YaziOrta, Tema.Konusan, TextAnchor.UpperLeft);
             konusanYazi.font = fontKalin;
@@ -213,7 +244,7 @@ namespace KizilTohum
 
             devamBtn = Dugme("Devam", alt.transform, "Devam ▶ (Boşluk)", Tema.Marka, out devamYazi);
             Konum((RectTransform)devamBtn.transform, 0.72f, 0.10f, 0.975f, 0.21f, 0, 0, 0, 0);
-            devamBtn.onClick.AddListener(() => { if (aktif != null && aktif.tip == AdimTipi.Etkilesim && !y.Ilerlenebilir) y.EtkilesimTamamlandi(aktif.nesne); else y.Ilerle(); });
+            devamBtn.onClick.AddListener(() => { if (DaktiloTamamla()) return; if (aktif != null && aktif.tip == AdimTipi.Etkilesim && !y.Ilerlenebilir) y.EtkilesimTamamlandi(aktif.nesne); else y.Ilerle(); });
             Text t2;
             ipucuBtn = Dugme("IpucuBtn", alt.transform, "İpucu (H)", Tema.IpucuDugme, out t2);
             Konum((RectTransform)ipucuBtn.transform, 0.58f, 0.10f, 0.71f, 0.21f, 0, 0, 0, 0);
@@ -250,7 +281,10 @@ namespace KizilTohum
             // kart paneli
             kartPaneli = Yuz("KartPaneli", kok, Tema.Orten).gameObject;
             Doldur((RectTransform)kartPaneli.transform);
+            kartPaneliGorsel = kartPaneli.GetComponent<Image>();
             var kart = Yuz("Kart", kartPaneli.transform, Tema.Kart);
+            kartKok = kart.rectTransform;
+            kartGrup = kart.gameObject.AddComponent<CanvasGroup>();
             Kaplama(kart, "kavram_karti_cercevesi_9slice", Tema.Kart);
             Konum(kart.rectTransform, 0.15f, 0.08f, 0.85f, 0.92f, 0, 0, 0, 0);
             kartBaslik = Yazi("KartBaslik", kart.transform, Tema.YaziBaslik, Tema.Konusan, TextAnchor.UpperCenter);
@@ -369,6 +403,130 @@ namespace KizilTohum
             b.onClick.AddListener(act);
         }
 
+        // ---------- arayüz hareketi ----------
+        static float YavasBitir(float f) { f = Mathf.Clamp01(f); return 1f - (1f - f) * (1f - f); }
+
+        void Hareket(float dt)
+        {
+            // daktilo
+            if (daktiloAkiyor)
+            {
+                daktiloT += dt;
+                int n = Tema.DaktiloHiz > 0f ? (int)(daktiloT / Tema.DaktiloHiz) : metinTam.Length;
+                if (n >= metinTam.Length) DaktiloTamamla();
+                else if (n != daktiloGorunen) { daktiloGorunen = n; DaktiloYaz(n); }
+            }
+            // diyalog paneli
+            if (panelT < Tema.PanelGirisSure) { panelT += dt; PanelUygula(); }
+            // portre: kayma ve (konuşan değişince) parlama
+            if (portreT < Tema.PortreGirisSure || portreParlamaT < Tema.PortreParlamaSure)
+            {
+                portreT += dt; portreParlamaT += dt;
+                PortreUygula();
+            }
+            // tohum duvarı: yumuşak kayma, sarsıntı, kırmızı parlama
+            if (duvarKaymaT < Tema.DuvarKaymaSure)
+            {
+                duvarKaymaT += dt;
+                duvarGoster = Mathf.Lerp(duvarKaynak, duvarHedef, Mathf.SmoothStep(0f, 1f, duvarKaymaT / Tema.DuvarKaymaSure));
+                DuvarDolguAyarla(duvarGoster);
+            }
+            if (duvarKapRect != null)
+            {
+                if (duvarSarsintiT < Tema.DuvarSarsintiSure)
+                {
+                    duvarSarsintiT += dt;
+                    float k = Mathf.Clamp01(1f - duvarSarsintiT / Tema.DuvarSarsintiSure);
+                    duvarKapRect.anchoredPosition = Random.insideUnitCircle * Tema.DuvarSarsintiGuc * k;
+                }
+                else if (duvarKapRect.anchoredPosition != Vector2.zero) duvarKapRect.anchoredPosition = Vector2.zero;
+                if (duvarParlamaT < Tema.DuvarParlamaSure)
+                {
+                    duvarParlamaT += dt;
+                    Color taban = duvarSpriteli ? Tema.Beyaz : Tema.Kontrol;
+                    duvarKapGorsel.color = Color.Lerp(Tema.Hata, taban, YavasBitir(duvarParlamaT / Tema.DuvarParlamaSure));
+                }
+            }
+            // kavram kartı
+            if (kartT < Tema.KartGirisSure) { kartT += dt; KartUygula(); }
+        }
+
+        void DaktiloYaz(int n)
+        {
+            // gizli kısım şeffaf yazılır: satır kaymaz, kelimeler sıçramaz
+            metinYazi.text = metinTam.Substring(0, n) + "<color=#00000000>" + metinTam.Substring(n) + "</color>";
+        }
+
+        void DaktiloBaslat(string metin)
+        {
+            metinTam = metin;
+            daktiloT = 0f;
+            daktiloGorunen = -1;
+            daktiloAkiyor = metin.Length > 0 && Tema.DaktiloHiz > 0f;
+            if (daktiloAkiyor) DaktiloYaz(0);
+            else metinYazi.text = metin;
+        }
+
+        /// <summary>Akıyorsa metni hemen tamamlar; akıyordu ise true döner.</summary>
+        bool DaktiloTamamla()
+        {
+            if (!daktiloAkiyor) return false;
+            daktiloAkiyor = false;
+            metinYazi.text = metinTam;
+            return true;
+        }
+
+        // Boşluk/Enter daktilo sürerken yalnızca metni tamamlar, adımı ilerletmez.
+        bool DaktiloKilidi()
+        {
+            if (!daktiloAkiyor) return false;
+            var k = UnityEngine.InputSystem.Keyboard.current;
+            if (k == null || !(k.spaceKey.wasPressedThisFrame || k.enterKey.wasPressedThisFrame || k.numpadEnterKey.wasPressedThisFrame)) return false;
+            DaktiloTamamla();
+            return true;
+        }
+
+        void PanelUygula()
+        {
+            if (altGrup == null || altRect == null) return;
+            float f = YavasBitir(panelT / Tema.PanelGirisSure);
+            altGrup.alpha = f;
+            altRect.anchoredPosition = new Vector2(0f, -Tema.PanelGirisMesafe * (1f - f));
+        }
+
+        void PortreGiris(string konusan)
+        {
+            if (portreRect == null) return;
+            portreT = 0f;
+            portreParlamaT = konusan == sonKonusan ? 999f : 0f; // parlama yalnızca konuşan değişince
+            sonKonusan = konusan;
+            PortreUygula();
+        }
+
+        void PortreUygula()
+        {
+            if (portre == null || portreRect == null) return;
+            float g = YavasBitir(portreT / Tema.PortreGirisSure);
+            portreRect.anchoredPosition = portreTaban + new Vector2(-Tema.PortreGirisMesafe * (1f - g), 0f);
+            float p = YavasBitir(portreParlamaT / Tema.PortreParlamaSure);
+            portre.color = Color.Lerp(Tema.PortreParlamaBaslangic, Tema.Beyaz, p);
+            portreRect.localScale = Vector3.one * Mathf.Lerp(Tema.PortreParlamaOlcek, 1f, p);
+        }
+
+        void KartUygula()
+        {
+            if (kartKok == null || kartGrup == null) return;
+            float f = YavasBitir(kartT / Tema.KartGirisSure);
+            kartKok.localScale = Vector3.one * Mathf.Lerp(Tema.KartBaslangicOlcek, 1f, f);
+            kartKok.localRotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(Tema.KartBaslangicAci, 0f, f));
+            kartGrup.alpha = f;
+            if (kartPaneliGorsel != null)
+            {
+                var c = Tema.Orten; c.a *= f; // arka plan kararır
+                kartPaneliGorsel.color = c;
+            }
+        }
+
         void Goster(bool menuGoster)
         {
             if (menuGoster) VideoBitir();
@@ -387,7 +545,7 @@ namespace KizilTohum
             y.IpucuGosterildi += t => { ipucuYazi.text = "İpucu: " + t; };
             y.LinNotuGosterildi += t => { linYazi.text = "Dr. Lin: " + t; };
             y.SaglikDegisti += (v, fark) => DuvarCiz(v);
-            y.KavramKartiAcildi += k => { kartBaslik.text = k.baslik; kartMetin.text = k.konu + "\n\n" + k.metin; var ks = Spr("Kartlar/" + k.id); kartGorsel.sprite = ks; kartGorsel.gameObject.SetActive(ks != null); kartPaneli.SetActive(true); };
+            y.KavramKartiAcildi += k => { kartBaslik.text = k.baslik; kartMetin.text = k.konu + "\n\n" + k.metin; var ks = Spr("Kartlar/" + k.id); kartGorsel.sprite = ks; kartGorsel.gameObject.SetActive(ks != null); kartPaneli.SetActive(true); kartT = 0f; KartUygula(); };
             y.SimulasyonGuncellendi += SimCiz;
             y.OyunBitti += o => SonGoster(o);
             y.GorevBitti += g => { };
@@ -660,20 +818,27 @@ namespace KizilTohum
         void DuvarCiz(int v)
         {
             duvarYazi.text = "Tohum Duvarı  " + v + "/100";
-            var r = duvarDolgu.rectTransform;
             float f = Mathf.Clamp01(v / 100f);
+            if (duvarGoster < 0f) { duvarGoster = f; duvarKaynak = f; duvarHedef = f; duvarKaymaT = 999f; DuvarDolguAyarla(f); }
+            else if (!Mathf.Approximately(f, duvarHedef)) { duvarKaynak = duvarGoster; duvarHedef = f; duvarKaymaT = 0f; } // çubuk Hareket()'te kayar
+            if (duvarSpriteli) duvarDolgu.color = v >= 85 ? Tema.CubukIyi : v >= 60 ? Tema.CubukOrta : Tema.CubukDusuk;
+            else duvarDolgu.color = v >= 85 ? Tema.Basari : v >= 60 ? Tema.Uyari : Tema.Hata;
+        }
+
+        void DuvarDolguAyarla(float f)
+        {
+            var r = duvarDolgu.rectTransform;
             if (duvarSpriteli)
             {
                 r.anchorMin = new Vector2(0.013f, 0.13f);
                 r.anchorMax = new Vector2(0.013f + 0.974f * f, 0.87f);
-                r.offsetMin = r.offsetMax = Vector2.zero;
-                duvarDolgu.color = v >= 85 ? Tema.CubukIyi : v >= 60 ? Tema.CubukOrta : Tema.CubukDusuk;
-                return;
             }
-            r.anchorMin = Vector2.zero;
-            r.anchorMax = new Vector2(f, 1);
+            else
+            {
+                r.anchorMin = Vector2.zero;
+                r.anchorMax = new Vector2(f, 1);
+            }
             r.offsetMin = r.offsetMax = Vector2.zero;
-            duvarDolgu.color = v >= 85 ? Tema.Basari : v >= 60 ? Tema.Uyari : Tema.Hata;
         }
 
         void AdimCiz(AdimSunumu s)
@@ -682,8 +847,10 @@ namespace KizilTohum
             DuvarCiz(s.saglik);
             gorevBaslik.text = s.gorev.id + " · " + s.gorev.baslik + "   (" + s.adimNo + "/" + s.toplamAdim + ")";
             konusanYazi.text = string.IsNullOrEmpty(s.adim.konusan) ? "" : s.adim.konusan;
-            metinYazi.text = s.adim.metin ?? "";
+            DaktiloBaslat(s.adim.metin ?? "");
             PortreSec(s.adim.konusan, null);
+            PortreGiris(s.adim.konusan);
+            panelT = 0f; PanelUygula();
             tepkiYazi.text = ""; ipucuYazi.text = ""; linYazi.text = "";
             SahneDegistir(s.adim);
             VideoBaslat(s.adim.video);
@@ -725,6 +892,8 @@ namespace KizilTohum
                 t.fontSize = Tema.YaziKucuk; t.alignment = TextAnchor.MiddleLeft;
                 t.rectTransform.offsetMin = new Vector2(Tema.MetinSol, 0); t.rectTransform.offsetMax = new Vector2(-Tema.MetinSag, 0);
                 SpriteDurumlari(b);
+                b.gameObject.AddComponent<CanvasGroup>();
+                b.gameObject.AddComponent<DugmeHareketi>().gecikme = secBtn.Count * Tema.SecenekAralik;
                 b.onClick.AddListener(() => y.CevapVer(idx));
                 b.interactable = !so.elendi;
                 secBtn.Add(b);
@@ -766,6 +935,7 @@ namespace KizilTohum
                 if (c.ceza > 0) e += "  (−" + c.ceza + ")";
                 tepkiYazi.text = e;
                 if (aktif != null) PortreSec(aktif.konusan, "yanlis");
+                duvarSarsintiT = 0f; duvarParlamaT = 0f;
                 SecDurum(c.secilenIndeks, "secenek_butonu_yanlis_9slice", Tema.Yanlis);
             }
         }

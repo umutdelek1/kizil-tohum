@@ -98,6 +98,29 @@ namespace KizilTohum
         public const float GirisYakinlik = 0.04f;                             // yeni sahne bu kadar yakın başlar
         public const float GirisCekilmeSure = 1.2f;                           // ...ve bu sürede geri çekilir
 
+        // ---------- arayüz hareketi (süreler sn, unscaled) ----------
+        public const float DaktiloHiz = 0.02f;                // karakter başına
+        public const float PanelGirisSure = 0.3f;             // diyalog paneli aşağıdan kayar + solar
+        public const float PanelGirisMesafe = 120f;
+        public const float PortreGirisSure = 0.35f;           // portre soldan kayar
+        public const float PortreGirisMesafe = 220f;
+        public const float PortreParlamaSure = 0.3f;          // konuşan değişince kısa parlama
+        public const float PortreParlamaOlcek = 1.06f;
+        public static readonly Color PortreParlamaBaslangic = new Color(0.55f, 0.55f, 0.55f, 1f);
+        public const float SecenekAralik = 0.08f;             // seçenekler sırayla belirir
+        public const float SecenekGirisSure = 0.2f;
+        public const float SecenekGirisOlcek = 0.94f;
+        public const float SecenekHoverOlcek = 1.03f;
+        public const float SecenekBasiliOlcek = 0.97f;
+        public const float SecenekOlcekHiz = 16f;             // ölçek yaklaşma hızı (1/sn)
+        public const float DuvarSarsintiSure = 0.35f;
+        public const float DuvarSarsintiGuc = 10f;
+        public const float DuvarParlamaSure = 0.5f;           // yanlışta kırmızı parlama
+        public const float DuvarKaymaSure = 0.4f;             // can azalırken çubuk yumuşak kayar
+        public const float KartGirisSure = 0.4f;              // kavram kartı ölçeklenip dönerek gelir
+        public const float KartBaslangicOlcek = 0.6f;
+        public const float KartBaslangicAci = 8f;
+
         // ---------- geçişler ----------
         public const float CaprazSure = 0.6f;
         public const float SarsintiSure = 0.4f;
