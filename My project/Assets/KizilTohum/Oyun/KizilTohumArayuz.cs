@@ -43,6 +43,8 @@ namespace KizilTohum
         System.Action<bool> videoBitince; // harita dalış videosu için: true = oynatılamadı
 
         HaritaEkrani harita;
+        HucreGorunumu hucre;   // KT04: üç görselin çapraz erimesi (görseller yoksa null, eski çizim)
+        bool hucreDenendi;
 
         // arayüz hareketi (hepsi Update'te unscaledDeltaTime ile akar)
         string metinTam = "";
@@ -996,9 +998,24 @@ namespace KizilTohum
             simPaneli.SetActive(true);
             SimTemizle();
             simYazi.text = "";
+            bool hucreAcikti = hucre != null && hucre.gameObject.activeSelf;
+            if (hucre != null) hucre.gameObject.SetActive(false);
             if (s.tur == "osmoz" && s.osmoz.cumle != null)
             {
                 var o = s.osmoz;
+                if (hucre == null && !hucreDenendi)
+                {
+                    hucreDenendi = true;
+                    hucre = HucreGorunumu.Kur(simPaneli.transform, fontKalin);
+                    if (hucre != null) hucre.transform.SetSiblingIndex(simKap.GetSiblingIndex() + 1); // yazının altında kalsın
+                }
+                if (hucre != null)
+                {
+                    hucre.gameObject.SetActive(true);
+                    hucre.Ayarla(o, !hucreAcikti);
+                    simYazi.text = "Dış/iç derişim: " + o.oran.ToString("0.00") + " · " + o.cumle + (s.hedefeUlasti ? "\n✓ Hedefe ulaştın!" : "");
+                    return;
+                }
                 float w = 240f;
                 var hs = Resources.Load<Sprite>("Gorseller/Hucre/hucre_" + o.durum);
                 if (hs != null)

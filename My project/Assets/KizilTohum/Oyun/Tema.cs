@@ -165,6 +165,23 @@ namespace KizilTohum
             new HaritaNoktaTanimi("yol_kavsagi",  "Yol Kavşağı",      0.113f, 0.73f, ""),
         };
 
+        // ---------- KT04 hücre (osmoz) ----------
+        public const float HucreGecisSure = 0.8f;                 // izotonik ↔ turgor / plazmoliz çapraz erime
+        public const float HucreNefesOlcek = 1f;                  // 1.015 nefes alır; duvar da ölçeklendiği için kapalı (bkz. rapor)
+        public const float HucreNefesSure = 3f;
+        public const float HucreKutuGenislik = 580f;
+        public const float HucreKutuYukseklik = 500f;
+        public const int HucreParcacikSayisi = 18;
+        public const float HucreParcacikBoyu = 14f;
+        public const float HucreParcacikHiz = 0.45f;              // tur/sn
+        public const float HucreParcacikIc = 0.55f;               // yarıçap oranı: zarın içi
+        public const float HucreParcacikDis = 1.25f;              // ...duvarın dışı
+        public const float HucreParcacikDengeAlfa = 0.25f;
+        public static readonly Color HucreSu = new Color(0.88f, 1f, 0.9f, 0.75f);   // saydam beyaz-yeşil (mavi değil)
+        public static readonly Color HucreEtiketCizgi = new Color(1f, 1f, 1f, 0.7f);
+        public static readonly Vector2 HucreMerkez = new Vector2(0.51f, 0.48f);    // görsel içinde (sol alt 0,0)
+        public static readonly Vector2 HucreYaricap = new Vector2(0.33f, 0.42f);
+
         // ---------- geçişler ----------
         public const float CaprazSure = 0.6f;
         public const float SarsintiSure = 0.4f;
