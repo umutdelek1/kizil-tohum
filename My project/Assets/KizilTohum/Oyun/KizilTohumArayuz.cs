@@ -24,6 +24,8 @@ namespace KizilTohum
             public readonly List<RectTransform> katman = new List<RectTransform>();
             public readonly List<int> derinlik = new List<int>(); // 0 arka, 1 orta, 2 ön; -1 tek resim
             public string ad, kamera;
+            public float olcek;        // tek resimde hedef ölçek
+            public Vector2 odak;       // zoom odağı (sol-üst orijinli); (0.5,0.5) merkez
             public float sure, basla;
             public bool giris;    // hafif yakın başlayıp geri çekilir
             public Vector2 fare;  // yumuşatılmış fare paralaksı
@@ -615,6 +617,8 @@ namespace KizilTohum
             s.sure = a.kameraSure > 0f ? a.kameraSure : Tema.KameraSure;
             s.basla = Time.unscaledTime;
             s.giris = giris;
+            s.olcek = a.kameraOlcek > 0f ? a.kameraOlcek : Tema.KenBurnsOlcek;
+            s.odak = (a.odakX > 0f || a.odakY > 0f) ? new Vector2(a.odakX, a.odakY) : new Vector2(0.5f, 0.5f);
 
             var arka = Spr("Parallax/" + a.gorsel + "_arka_plan_dolu");
             var orta = Spr("Parallax/" + a.gorsel + "_orta_plan");
@@ -634,7 +638,9 @@ namespace KizilTohum
                 }
                 return s;
             }
-            var spr = Resources.Load<Sprite>("Gorseller/Sahneler/" + a.gorsel);
+            Sprite spr = null;
+            if (!string.IsNullOrEmpty(a.gorsel3d)) spr = Resources.Load<Sprite>("Gorseller/" + a.gorsel3d);   // yeni görsel; yoksa eskiye düşer
+            if (spr == null) spr = Resources.Load<Sprite>("Gorseller/Sahneler/" + a.gorsel);
             if (spr == null) spr = Resources.Load<Sprite>("Gorseller/" + a.gorsel);
             if (spr != null)
             {
@@ -658,7 +664,7 @@ namespace KizilTohum
                 if (r == null) continue;
                 int d = s.derinlik[i];
                 bool tek = d < 0;
-                float hedef = tek ? Tema.KenBurnsOlcek : Tema.KatmanOlcek[d];
+                float hedef = tek ? s.olcek : Tema.KatmanOlcek[d];
                 float kay = tek ? Tema.KenBurnsKaydirma : Tema.KaydirmaOfset[d];
                 float olcek = 1f, x = 0f;
                 switch (s.kamera)
@@ -670,6 +676,13 @@ namespace KizilTohum
                     default: olcek = Mathf.Lerp(1f, hedef, t); if (tek) x = Mathf.Lerp(0f, Tema.KenBurnsKayma, t); break; // itme
                 }
                 Vector2 p = new Vector2(x, 0f);
+                if (tek && s.odak != new Vector2(0.5f, 0.5f))
+                {
+                    // odak noktası yerinde kalır, kenarlar açılır: ölçek odağa doğru yaklaşır (x kayması kullanılmaz)
+                    Rect rc = r.rect;
+                    Vector2 f = new Vector2((s.odak.x - 0.5f) * rc.width, (0.5f - s.odak.y) * rc.height);
+                    p = f * (1f - olcek * yakin);
+                }
                 if (!tek) p += s.fare * Tema.ParalaksGuc[d];
                 r.anchoredPosition = p;
                 r.localScale = Vector3.one * (olcek * yakin);

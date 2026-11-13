@@ -279,6 +279,13 @@ namespace KizilTohum.Editor
             KartKapat();
             Cek("11_secenek");
             yield return 0.4f; // çekim kare sonunda alınır; sonraki adım görüntüye karışmasın
+            // g) KT08 ilk adım (pompa odası)
+            Cagir("VideoIptal");
+            Cagir("GorevAc", "KT08");
+            yield return 4f;
+            KartKapat();
+            Cek("12_kt08_ilk_adim");
+            yield return 0.4f;
             yield return 1.5f;
         }
 
