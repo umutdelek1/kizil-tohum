@@ -1,8 +1,10 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
+using UnityEngine.Video;
 
 namespace KizilTohum
 {
@@ -13,7 +15,31 @@ namespace KizilTohum
     /// </summary>
     public class KizilTohumArayuz : MonoBehaviour
     {
-        readonly List<RectTransform> paraKatman = new List<RectTransform>();
+        // Bir sahne "slotu": tek resim ya da arka/orta/ön katmanlar + kendi kamera hareketi.
+        // Geçiş sırasında eski ve yeni slot birlikte yaşar; eskisi kamerasını sürdürürken yenisi üstte erir.
+        class SahneSlot
+        {
+            public RectTransform kok;
+            public CanvasGroup grup;
+            public readonly List<RectTransform> katman = new List<RectTransform>();
+            public readonly List<int> derinlik = new List<int>(); // 0 arka, 1 orta, 2 ön; -1 tek resim
+            public string ad, kamera;
+            public float sure, basla;
+            public bool giris;    // hafif yakın başlayıp geri çekilir
+            public Vector2 fare;  // yumuşatılmış fare paralaksı
+        }
+
+        readonly List<SahneSlot> slotlar = new List<SahneSlot>();
+        Coroutine gecisRutin;
+        CanvasGroup karartGrup;
+        Text gecisYazi;
+        RectTransform ekran;
+
+        GameObject videoKok;
+        VideoPlayer video;
+        RawImage videoGorsel;
+        Coroutine videoZaman;
+        int videoKapandiKare = -1;
 
         bool duvarSpriteli;
         readonly List<RectTransform> menuKatman = new List<RectTransform>();
@@ -57,7 +83,8 @@ namespace KizilTohum
             }
             Kur();
             Bagla();
-            oyun.KlavyeKilitli = () => menu.activeSelf || kartPaneli.activeSelf || sonEkrani.activeSelf;
+            oyun.KlavyeKilitli = () => menu.activeSelf || kartPaneli.activeSelf || sonEkrani.activeSelf
+                || videoKok != null || Time.frameCount == videoKapandiKare;
             string derin = OyunDenetleyici.DerinBaglantiGorevi();
             if (!string.IsNullOrEmpty(derin) && oyun.GoreveGit(derin)) Goster(false);
             else Goster(true);
@@ -81,16 +108,27 @@ namespace KizilTohum
                     menuKatman[i].localScale = Vector3.one * zum;
                 }
             }
+            // sinematik kamera: her slot kendi hareketini oynar; fare paralaksı katmanlıda küçük ek
             var fare = UnityEngine.InputSystem.Mouse.current;
-            if (fare != null && paraKatman.Count > 0)
+            Vector2 fn = Vector2.zero;
+            if (fare != null)
             {
                 Vector2 p = fare.position.ReadValue();
-                Vector2 n = new Vector2(Mathf.Clamp(p.x / Mathf.Max(1, Screen.width) * 2f - 1f, -1f, 1f), Mathf.Clamp(p.y / Mathf.Max(1, Screen.height) * 2f - 1f, -1f, 1f));
-                for (int i = 0; i < paraKatman.Count; i++)
-                    if (paraKatman[i] != null)
-                        paraKatman[i].anchoredPosition = Vector2.Lerp(paraKatman[i].anchoredPosition, new Vector2(-n.x, -n.y) * Tema.ParalaksGuc[i], Time.unscaledDeltaTime * Tema.Takip);
+                fn = -new Vector2(Mathf.Clamp(p.x / Mathf.Max(1, Screen.width) * 2f - 1f, -1f, 1f), Mathf.Clamp(p.y / Mathf.Max(1, Screen.height) * 2f - 1f, -1f, 1f));
+            }
+            float simdi = Time.unscaledTime;
+            for (int i = 0; i < slotlar.Count; i++)
+            {
+                if (fare != null) slotlar[i].fare = Vector2.Lerp(slotlar[i].fare, fn, Time.unscaledDeltaTime * Tema.Takip);
+                KameraUygula(slotlar[i], simdi);
+            }
+            if (video != null && videoGorsel != null && video.texture != null)
+            {
+                videoGorsel.texture = video.texture;
+                videoGorsel.enabled = true;
             }
             var k = UnityEngine.InputSystem.Keyboard.current;
+            if (videoKok != null && k != null && (k.spaceKey.wasPressedThisFrame || k.enterKey.wasPressedThisFrame)) { VideoBitir(); return; }
             if (k == null || kartPaneli == null || !kartPaneli.activeSelf) return;
             if (k.spaceKey.wasPressedThisFrame || k.enterKey.wasPressedThisFrame) kartPaneli.SetActive(false);
         }
@@ -195,6 +233,19 @@ namespace KizilTohum
             kaydirici = SliderYap(simPaneli.transform);
             Konum((RectTransform)kaydirici.transform, 0.1f, 0.02f, 0.9f, 0.13f, 0, 0, 0, 0);
             kaydirici.onValueChanged.AddListener(v => { if (aktif != null && aktif.tip == AdimTipi.Kaydirici) y.KaydiriciDegisti(v); });
+
+            // geçiş örtüsü (karartma + "haftalar sonra" kartı): oyun ekranının en üstünde, tıklamayı engellemez
+            ekran = (RectTransform)oyunEkrani.transform;
+            var ortu = Bos("GecisOrtusu", oyunEkrani.transform);
+            Doldur((RectTransform)ortu.transform);
+            karartGrup = ortu.AddComponent<CanvasGroup>();
+            karartGrup.alpha = 0f; karartGrup.blocksRaycasts = false; karartGrup.interactable = false;
+            var siyah = Yuz("Siyah", ortu.transform, Tema.Base);
+            siyah.raycastTarget = false;
+            Doldur(siyah.rectTransform);
+            gecisYazi = Yazi("GecisYazi", ortu.transform, Tema.YaziBaslik, Tema.Beyaz, TextAnchor.MiddleCenter);
+            gecisYazi.font = fontBaslik;
+            Doldur(gecisYazi.rectTransform);
 
             // kart paneli
             kartPaneli = Yuz("KartPaneli", kok, Tema.Orten).gameObject;
@@ -320,6 +371,7 @@ namespace KizilTohum
 
         void Goster(bool menuGoster)
         {
+            if (menuGoster) VideoBitir();
             menu.SetActive(menuGoster);
             oyunEkrani.SetActive(!menuGoster);
             if (menuGoster) sonEkrani.SetActive(false);
@@ -341,27 +393,250 @@ namespace KizilTohum
             y.GorevBitti += g => { };
         }
 
-        // Parallax: arka/orta/ön katmanlar fareye göre hafifçe kayar (katmanlar yoksa düz sahne görünür)
-        void ParalaksKur(string ad)
+        // ---------- sinematik sahne ----------
+        // Katmanlı sahne (Parallax/<ad>_arka_plan_dolu, _orta_plan, _on_plan) varsa onu, yoksa tek resmi kurar.
+        SahneSlot SlotKur(Adim a, bool giris)
         {
-            for (int i = 0; i < paraKatman.Count; i++) if (paraKatman[i] != null) Destroy(paraKatman[i].gameObject);
-            paraKatman.Clear();
-            var arka = Spr("Parallax/" + ad + "_arka_plan_dolu");
-            var orta = Spr("Parallax/" + ad + "_orta_plan");
-            var on = Spr("Parallax/" + ad + "_on_plan");
-            if (arka == null || orta == null) return;
-            var ks = new[] { arka, orta, on };
-            for (int i = 0; i < ks.Length; i++)
+            var s = new SahneSlot();
+            var go = Bos("Sahne_" + a.gorsel, sahne.transform);
+            s.kok = (RectTransform)go.transform;
+            Doldur(s.kok);
+            s.grup = go.AddComponent<CanvasGroup>();
+            s.grup.blocksRaycasts = false; s.grup.interactable = false;
+            s.ad = a.gorsel;
+            s.kamera = string.IsNullOrEmpty(a.kamera) ? KameraTipi.Itme : a.kamera;
+            s.sure = a.kameraSure > 0f ? a.kameraSure : Tema.KameraSure;
+            s.basla = Time.unscaledTime;
+            s.giris = giris;
+
+            var arka = Spr("Parallax/" + a.gorsel + "_arka_plan_dolu");
+            var orta = Spr("Parallax/" + a.gorsel + "_orta_plan");
+            var on = Spr("Parallax/" + a.gorsel + "_on_plan");
+            if (arka != null && orta != null)
             {
-                if (ks[i] == null) continue;
-                var im = Yuz("Katman" + i, sahne.transform, Color.white);
-                im.sprite = ks[i]; im.raycastTarget = false; im.preserveAspect = false;
-                var r = im.rectTransform;
-                r.anchorMin = Vector2.zero; r.anchorMax = Vector2.one;
-                r.offsetMin = new Vector2(-Tema.ParalaksSahne, -Tema.ParalaksSahne); r.offsetMax = new Vector2(Tema.ParalaksSahne, Tema.ParalaksSahne);
-                paraKatman.Add(r);
+                var ks = new[] { arka, orta, on };
+                for (int i = 0; i < ks.Length; i++)
+                {
+                    if (ks[i] == null) continue;
+                    var im = Yuz("Katman" + i, s.kok, Color.white);
+                    im.sprite = ks[i]; im.raycastTarget = false; im.preserveAspect = false;
+                    var r = im.rectTransform;
+                    r.anchorMin = Vector2.zero; r.anchorMax = Vector2.one;
+                    r.offsetMin = new Vector2(-Tema.ParalaksSahne, -Tema.ParalaksSahne); r.offsetMax = new Vector2(Tema.ParalaksSahne, Tema.ParalaksSahne);
+                    s.katman.Add(r); s.derinlik.Add(i);
+                }
+                return s;
             }
-            sahne.color = Tema.Saydam;
+            var spr = Resources.Load<Sprite>("Gorseller/Sahneler/" + a.gorsel);
+            if (spr == null) spr = Resources.Load<Sprite>("Gorseller/" + a.gorsel);
+            if (spr != null)
+            {
+                var im = Yuz("Resim", s.kok, Color.white);
+                im.sprite = spr; im.raycastTarget = false; im.preserveAspect = false;
+                Doldur(im.rectTransform);
+                s.katman.Add(im.rectTransform); s.derinlik.Add(-1);
+            }
+            return s; // resim de yoksa slot boş kalır, arkadaki Tema.Sahne rengi görünür
+        }
+
+        // Zamanla kendi oynayan kamera: itme / cekme / kaydirmaSol / kaydirmaSag / sabit.
+        void KameraUygula(SahneSlot s, float simdi)
+        {
+            float e = simdi - s.basla;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(e / s.sure));
+            float yakin = s.giris ? 1f + Tema.GirisYakinlik * (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(e / Tema.GirisCekilmeSure))) : 1f;
+            for (int i = 0; i < s.katman.Count; i++)
+            {
+                var r = s.katman[i];
+                if (r == null) continue;
+                int d = s.derinlik[i];
+                bool tek = d < 0;
+                float hedef = tek ? Tema.KenBurnsOlcek : Tema.KatmanOlcek[d];
+                float kay = tek ? Tema.KenBurnsKaydirma : Tema.KaydirmaOfset[d];
+                float olcek = 1f, x = 0f;
+                switch (s.kamera)
+                {
+                    case KameraTipi.Cekme: olcek = Mathf.Lerp(hedef, 1f, t); if (tek) x = Mathf.Lerp(Tema.KenBurnsKayma, 0f, t); break;
+                    case KameraTipi.KaydirmaSol: olcek = hedef; x = Mathf.Lerp(-kay, kay, t); break; // kamera sola → içerik sağa
+                    case KameraTipi.KaydirmaSag: olcek = hedef; x = Mathf.Lerp(kay, -kay, t); break;
+                    case KameraTipi.Sabit: break;
+                    default: olcek = Mathf.Lerp(1f, hedef, t); if (tek) x = Mathf.Lerp(0f, Tema.KenBurnsKayma, t); break; // itme
+                }
+                Vector2 p = new Vector2(x, 0f);
+                if (!tek) p += s.fare * Tema.ParalaksGuc[d];
+                r.anchoredPosition = p;
+                r.localScale = Vector3.one * (olcek * yakin);
+            }
+        }
+
+        void SahneDegistir(Adim a)
+        {
+            if (string.IsNullOrEmpty(a.gorsel)) return; // görsel yoksa önceki sahne kamerasıyla sürer
+            string gecis = string.IsNullOrEmpty(a.gecis) ? GecisTipi.Capraz : a.gecis;
+            var onceki = slotlar.Count > 0 ? slotlar[slotlar.Count - 1] : null;
+            if (onceki != null && onceki.ad == a.gorsel && gecis == GecisTipi.Capraz) return; // aynı resim: kesme yok
+            GecisiBitir();
+            var yeni = SlotKur(a, onceki != null);
+            slotlar.Add(yeni);
+            KameraUygula(yeni, Time.unscaledTime);
+            if (onceki == null) return;
+            yeni.grup.alpha = 0f;
+            switch (gecis)
+            {
+                case GecisTipi.Karart: gecisRutin = StartCoroutine(KarartRutin(yeni, null)); break;
+                case GecisTipi.HaftalarSonra: gecisRutin = StartCoroutine(KarartRutin(yeni, Tema.HaftalarSonraMetni)); break;
+                case GecisTipi.Sarsinti: gecisRutin = StartCoroutine(CaprazRutin(yeni, true)); break;
+                default: gecisRutin = StartCoroutine(CaprazRutin(yeni, false)); break;
+            }
+        }
+
+        // Eski sahne kamerasını sürdürürken yenisi üstte erir; istenirse ekran sarsılır.
+        IEnumerator CaprazRutin(SahneSlot yeni, bool sars)
+        {
+            float t0 = Time.unscaledTime;
+            float son = sars ? Mathf.Max(Tema.CaprazSure, Tema.SarsintiSure) : Tema.CaprazSure;
+            for (float e = 0f; e < son; e = Time.unscaledTime - t0)
+            {
+                yeni.grup.alpha = Mathf.Clamp01(e / Tema.CaprazSure);
+                if (sars) ekran.anchoredPosition = e < Tema.SarsintiSure ? Random.insideUnitCircle * Tema.SarsintiGuc * (1f - e / Tema.SarsintiSure) : Vector2.zero;
+                yield return null;
+            }
+            gecisRutin = null;
+            GecisiBitir();
+        }
+
+        // Siyaha erir, sahneyi değiştirir; metin verilirse ortada yazı kartı gösterir, sonra açılır.
+        IEnumerator KarartRutin(SahneSlot yeni, string metin)
+        {
+            yield return Gecir(Tema.KarartSure, f => karartGrup.alpha = f);
+            EskileriSil();
+            yeni.grup.alpha = 1f;
+            yeni.basla = Time.unscaledTime; // kamera karanlıktan çıkınca başlasın
+            if (!string.IsNullOrEmpty(metin))
+            {
+                gecisYazi.text = metin;
+                yield return Gecir(Tema.YaziKartGiris, YaziAlfa);
+                yield return new WaitForSecondsRealtime(Tema.HaftalarBekle);
+                yield return Gecir(Tema.YaziKartGiris, f => YaziAlfa(1f - f));
+                gecisYazi.text = "";
+            }
+            yield return Gecir(Tema.KarartSure, f => karartGrup.alpha = 1f - f);
+            gecisRutin = null;
+            GecisiBitir();
+        }
+
+        IEnumerator Gecir(float sure, System.Action<float> uygula)
+        {
+            float t0 = Time.unscaledTime;
+            for (float e = 0f; e < sure; e = Time.unscaledTime - t0)
+            {
+                uygula(e / sure);
+                yield return null;
+            }
+            uygula(1f);
+        }
+
+        void YaziAlfa(float a)
+        {
+            var c = Tema.Beyaz; c.a = a;
+            gecisYazi.color = c;
+        }
+
+        // Yarım kalan geçişi anında tamamlar: yalnızca en yeni sahne kalır, örtü ve sarsıntı sıfırlanır.
+        void GecisiBitir()
+        {
+            if (gecisRutin != null) { StopCoroutine(gecisRutin); gecisRutin = null; }
+            EskileriSil();
+            if (slotlar.Count > 0) slotlar[slotlar.Count - 1].grup.alpha = 1f;
+            karartGrup.alpha = 0f;
+            gecisYazi.text = "";
+            ekran.anchoredPosition = Vector2.zero;
+        }
+
+        void EskileriSil()
+        {
+            while (slotlar.Count > 1)
+            {
+                if (slotlar[0].kok != null) Destroy(slotlar[0].kok.gameObject);
+                slotlar.RemoveAt(0);
+            }
+        }
+
+        // ---------- video ----------
+        // StreamingAssets/Video/<dosya> sessiz oynar; yoksa ya da hazırlanamazsa uyarı yazıp adımın resmine düşer.
+        void VideoBaslat(string dosya)
+        {
+            VideoBitir();
+            if (string.IsNullOrEmpty(dosya)) return;
+            string yol = Application.streamingAssetsPath + "/Video/" + dosya;
+            if (!yol.Contains("://") && !System.IO.File.Exists(yol)) // WebGL/Android'de yol URL'dir, denetlenemez
+            {
+                Debug.LogWarning("KizilTohum: video bulunamadı, sahne resmi kullanılıyor: " + yol);
+                return;
+            }
+            var zemin = Yuz("Video", oyunEkrani.transform, Tema.Base);
+            videoKok = zemin.gameObject;
+            Doldur(zemin.rectTransform);
+            videoKok.transform.SetSiblingIndex(karartGrup.transform.GetSiblingIndex());
+            var atla = videoKok.AddComponent<Button>();
+            atla.transition = Selectable.Transition.None;
+            atla.onClick.AddListener(VideoBitir);
+            var gor = Bos("Goruntu", videoKok.transform);
+            videoGorsel = gor.AddComponent<RawImage>();
+            videoGorsel.raycastTarget = false;
+            videoGorsel.enabled = false;
+            var oran = gor.AddComponent<AspectRatioFitter>();
+            oran.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+
+            var vp = videoKok.AddComponent<VideoPlayer>();
+            video = vp;
+            vp.playOnAwake = false;
+            vp.isLooping = false;
+            vp.skipOnDrop = true;
+            vp.waitForFirstFrame = true;
+            vp.source = VideoSource.Url;
+            vp.url = yol;
+            vp.audioOutputMode = VideoAudioOutputMode.None;
+            vp.renderMode = VideoRenderMode.APIOnly;
+            vp.errorReceived += (p, m) =>
+            {
+                if (p != video) return;
+                Debug.LogWarning("KizilTohum: video oynatılamadı (" + dosya + "): " + m);
+                VideoBitir();
+            };
+            vp.prepareCompleted += p =>
+            {
+                if (p != video) return;
+                if (videoZaman != null) { StopCoroutine(videoZaman); videoZaman = null; }
+                if (p.width == 0 || p.height == 0) { Debug.LogWarning("KizilTohum: video boyutu okunamadı: " + dosya); VideoBitir(); return; }
+                oran.aspectRatio = (float)p.width / p.height;
+                p.Play();
+            };
+            vp.loopPointReached += p => { if (p == video) VideoBitir(); };
+            vp.Prepare();
+            videoZaman = StartCoroutine(VideoZamanAsimi(vp, dosya));
+        }
+
+        IEnumerator VideoZamanAsimi(VideoPlayer vp, string dosya)
+        {
+            yield return new WaitForSecondsRealtime(Tema.VideoHazirlikSiniri);
+            videoZaman = null;
+            if (vp == video && !vp.isPrepared)
+            {
+                Debug.LogWarning("KizilTohum: video zamanında hazırlanamadı: " + dosya);
+                VideoBitir();
+            }
+        }
+
+        // Video bitince, tıklanınca ya da Boşluk/Enter'a basılınca kapanır; altındaki sahne zaten kurulu.
+        void VideoBitir()
+        {
+            if (videoZaman != null) { StopCoroutine(videoZaman); videoZaman = null; }
+            if (videoKok == null) return;
+            if (video != null) video.Stop();
+            Destroy(videoKok);
+            videoKok = null; video = null; videoGorsel = null;
+            videoKapandiKare = Time.frameCount;
         }
 
         void PortreSec(string konusan, string durum)
@@ -410,14 +685,8 @@ namespace KizilTohum
             metinYazi.text = s.adim.metin ?? "";
             PortreSec(s.adim.konusan, null);
             tepkiYazi.text = ""; ipucuYazi.text = ""; linYazi.text = "";
-            if (!string.IsNullOrEmpty(s.adim.gorsel))
-            {
-                var spr = Resources.Load<Sprite>("Gorseller/Sahneler/" + s.adim.gorsel);
-                if (spr == null) spr = Resources.Load<Sprite>("Gorseller/" + s.adim.gorsel);
-                if (spr != null) { sahne.sprite = spr; sahne.color = Color.white; }
-                else { sahne.sprite = null; sahne.color = Tema.Sahne; }
-                ParalaksKur(s.adim.gorsel);
-            }
+            SahneDegistir(s.adim);
+            VideoBaslat(s.adim.video);
             bool soruTipi = s.adim.SecenekliMi;
             ipucuBtn.gameObject.SetActive(soruTipi);
             SecenekKur(s);

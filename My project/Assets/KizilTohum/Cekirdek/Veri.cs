@@ -69,6 +69,23 @@ namespace KizilTohum
         public const string Son = "son";
     }
 
+    public static class KameraTipi
+    {
+        public const string Itme = "itme";
+        public const string Cekme = "cekme";
+        public const string KaydirmaSol = "kaydirmaSol";
+        public const string KaydirmaSag = "kaydirmaSag";
+        public const string Sabit = "sabit";
+    }
+
+    public static class GecisTipi
+    {
+        public const string Capraz = "capraz";
+        public const string Sarsinti = "sarsinti";
+        public const string Karart = "karart";
+        public const string HaftalarSonra = "haftalarSonra";
+    }
+
     [Serializable]
     public class Adim
     {
@@ -98,6 +115,12 @@ namespace KizilTohum
         public float hedefMax;
         public string basariMetni;
         public bool ek;
+
+        // sunum (isteğe bağlı; JSON'da yoksa boş/0 gelir ve arayüz varsayılanı kullanır)
+        public string kamera;      // KameraTipi; boşsa itme
+        public float kameraSure;   // sn; 0 ise Tema.KameraSure
+        public string gecis;       // GecisTipi; boşsa capraz
+        public string video;       // StreamingAssets/Video/ altındaki dosya adı
 
         public bool SecenekliMi
         {

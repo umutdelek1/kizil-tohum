@@ -88,6 +88,26 @@ namespace KizilTohum
         public const float MenuYaklasma = 0.2f;
         public const float MenuZoom = 0.015f;
 
+        // ---------- sinematik kamera ----------
+        public const float KameraSure = 8f;                                   // kameraSure verilmezse
+        public static readonly float[] KatmanOlcek = { 1.05f, 1.10f, 1.18f }; // arka / orta / ön hedef ölçek
+        public static readonly float[] KaydirmaOfset = { 20f, 50f, 90f };    // kaydırmada katman başına x ofseti
+        public const float KenBurnsOlcek = 1.08f;                             // tek resimli sahne
+        public const float KenBurnsKayma = 25f;                               // itme/çekmede hafif x kayması
+        public const float KenBurnsKaydirma = 50f;                            // tek resimde kaydırma ofseti
+        public const float GirisYakinlik = 0.04f;                             // yeni sahne bu kadar yakın başlar
+        public const float GirisCekilmeSure = 1.2f;                           // ...ve bu sürede geri çekilir
+
+        // ---------- geçişler ----------
+        public const float CaprazSure = 0.6f;
+        public const float SarsintiSure = 0.4f;
+        public const float SarsintiGuc = 14f;
+        public const float KarartSure = 0.5f;
+        public const float YaziKartGiris = 0.4f;
+        public const float HaftalarBekle = 1.6f;
+        public const string HaftalarSonraMetni = "Haftalar sonra…";
+        public const float VideoHazirlikSiniri = 6f;                          // bu sürede hazırlanmazsa resme düş
+
         static Color Hex(string h, float a = 1f)
         {
             Color c;
