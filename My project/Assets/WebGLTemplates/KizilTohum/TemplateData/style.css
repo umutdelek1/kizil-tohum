@@ -7,7 +7,8 @@ html, body {
   background: #000;
 }
 
-/* Ekranı kaplar; içindeki tuval 16:9 oranını koruyarak pencereye sığar (letterbox). */
+/* Ekranı kaplar; tuval pencerenin tamamını doldurur (siyah bant yok). 16:9 dışındaki pencerelerde
+   oyun içindeki iki katmanlı düzen (arka plan kaplar, içerik güvenli alana sığar) uyumu sağlar. */
 #unity-container {
   position: fixed;
   inset: 0;
@@ -29,8 +30,8 @@ html, body {
 
 #unity-canvas {
   display: block;
-  width: min(100vw, calc(100vh * 16 / 9));
-  height: min(100vh, calc(100vw * 9 / 16));
+  width: 100vw;
+  height: 100vh;
   background: #0c0a0c;
   outline: none;
 }

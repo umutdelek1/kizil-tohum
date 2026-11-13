@@ -102,8 +102,8 @@ namespace KizilTohum
             engel.color = Tema.Base;
 
             // dünya: sürüklenen / dalışta yakınlaşan katman
-            dunya = (RectTransform)Bos("Dunya", kok).transform;
-            Doldur(dunya);
+            // dünya = Kapla çerçevesi: harita ekranı tamamen kaplar (kırpılır); simgeler dünyanın çocuğudur, kaymaz
+            dunya = EkranKatmani.Olustur("Dunya", kok, EkranKatmani.Mod.Kapla);
             arkaA = Yuz("ArkaA", dunya, Tema.Base); Doldur(arkaA.rectTransform); arkaA.raycastTarget = false;
             arkaB = Yuz("ArkaB", dunya, Tema.Saydam); Doldur(arkaB.rectTransform); arkaB.raycastTarget = false;
 
@@ -139,9 +139,10 @@ namespace KizilTohum
             bilgi.gameObject.SetActive(false);
 
             // üst çubuk
-            var cubuk = Yuz("Ust", kok, Tema.Panel);
-            Konum(cubuk.rectTransform, 0, 1, 1, 1, 0, -90, 0, 0);
-            cubuk.raycastTarget = false;
+            var cubukSerit = Yuz("Ust", kok, Tema.Panel);   // şerit tam genişlik; içerik güvenli genişlikte
+            Konum(cubukSerit.rectTransform, 0, 1, 1, 1, 0, -90, 0, 0);
+            cubukSerit.raycastTarget = false;
+            var cubuk = EkranKatmani.Olustur("Ic", cubukSerit.transform, EkranKatmani.Mod.Yatay);
             sayac = Yazi("Sayac", cubuk.transform, Tema.YaziOrta, Tema.Beyaz, TextAnchor.MiddleLeft, fontKalin);
             var di = Spr("Ikonlar/ikon_defter");
             float sayacSol = 30f;

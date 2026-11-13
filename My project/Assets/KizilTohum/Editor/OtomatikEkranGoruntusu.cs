@@ -22,6 +22,7 @@ namespace KizilTohum.Editor
         static readonly string[] YedekAnahtarlar = { "kizil_tohum_kayit_v1", "kizil_tohum_harita_tamam_v1", "kizil_tohum_kartlar_v1" };
 
         static IEnumerator<object> akis;
+        const string BoyutBayrak = "KT_BoyutTesti";
         static double bekleBitis, kosulBitis;
         static Func<bool> beklenen;
         static string klasor;
@@ -37,9 +38,20 @@ namespace KizilTohum.Editor
             EditorApplication.playModeStateChanged += ModDegisti;
         }
 
+        /// <summary>Pencere oranı testi: 1920x1080, 2560x1080, 1280x1024 ve 1000x800 için menü, harita, KT04-5 ve final görüntüsü.</summary>
+        [MenuItem("Kızıl Tohum/Pencere Boyutu Testi")]
+        static void BoyutTestiBaslat()
+        {
+            SessionState.SetBool(BoyutBayrak, true);
+            SessionState.SetBool(Bayrak, true);
+            if (EditorApplication.isPlaying) Kur();
+            else EditorApplication.EnterPlaymode();
+        }
+
         [MenuItem("Kızıl Tohum/Otomatik Ekran Görüntüsü")]
         static void MenudenBaslat()
         {
+            SessionState.SetBool(BoyutBayrak, false);
             SessionState.SetBool(Bayrak, true);
             if (EditorApplication.isPlaying) Kur();
             else EditorApplication.EnterPlaymode();
@@ -77,7 +89,7 @@ namespace KizilTohum.Editor
             for (int i = 0; i < YedekAnahtarlar.Length; i++)
                 if (PlayerPrefs.HasKey(YedekAnahtarlar[i])) yedek[YedekAnahtarlar[i]] = PlayerPrefs.GetString(YedekAnahtarlar[i]);
 
-            akis = Akis().GetEnumerator();
+            akis = (SessionState.GetBool(BoyutBayrak, false) ? BoyutAkisi() : Akis()).GetEnumerator();
             bekleBitis = EditorApplication.timeSinceStartup; beklenen = null;
             EditorApplication.update += Guncelle;
         }
@@ -380,6 +392,10 @@ namespace KizilTohum.Editor
             Cagir("GorevAc", "KT04");
             yield return 0.5f;
             Cagir("VideoIptal");
+            foreach (var x in Gec(a => a.id == "KT04-5")) yield return x;
+            yield return 2.6f; KartKapat();
+            Cek("34_kt04_5_tohum7_olcum");
+            yield return 0.4f;
             foreach (var x in Gec(a => a.id == "KT04-7")) yield return x;
             yield return 2.6f; KartKapat();
             Cek("31_kt04_7");
@@ -390,6 +406,10 @@ namespace KizilTohum.Editor
             foreach (var x in Gec(a => a.id == "KT01-2")) yield return x;
             yield return 2.6f; KartKapat();
             Cek("33_kt01_2");
+            yield return 0.4f;
+            foreach (var x in Gec(a => a.id == "KT01-S1")) yield return x;
+            yield return 2.6f; KartKapat();
+            Cek("35_kt01_s1_tohum7_soru");
             yield return 0.4f;
             KizilTohumArayuz.GorevKapagiKapali = false;
             Cagir("GorevAc", "KT08");
@@ -430,6 +450,74 @@ namespace KizilTohum.Editor
                 d.Kapat();
             }
             yield return 1.5f;
+        }
+
+        // ---------- pencere oranı testi ----------
+        static IEnumerable<object> BoyutAkisi()
+        {
+            yield return (Func<bool>)(() => Arayuz != null && Yonetici != null);
+            yield return 3f;
+            var ic = Yonetici.Icerik;
+            foreach (var b in new[] { new[] { 1920, 1080 }, new[] { 2560, 1080 }, new[] { 1280, 1024 }, new[] { 1000, 800 } })
+            {
+                string on = "40_" + b[0] + "x" + b[1];
+                OyunBoyutu(b[0], b[1]);
+                yield return 1.5f;
+                Not(on + ": Screen " + Screen.width + "x" + Screen.height);
+                if (Harita != null && Harita.Acik) Harita.Kapat();
+                Cagir("Goster", true);
+                yield return 1.5f;
+                Cek(on + "_01_menu"); yield return 0.5f;
+                Cagir("HaritaAc"); yield return 3f;
+                Cek(on + "_02_harita"); yield return 0.5f;
+                if (Harita != null) Harita.Kapat();
+                Cagir("GorevAc", "KT04"); yield return 0.5f;
+                Cagir("VideoIptal");
+                foreach (var x in Gec(a => a.id == "KT04-5")) yield return x;
+                yield return 2.8f; KartKapat();
+                Cek(on + "_03_kt04_5"); yield return 0.5f;
+                Cagir("SonGoster", new OyunSonu { son = ic.sonlar[0], saglik = 100 });
+                yield return 1.5f;
+                Cek(on + "_04_final"); yield return 0.5f;
+                Cagir("Goster", true); yield return 0.5f;
+            }
+            OyunBoyutu(1920, 1080);
+        }
+
+        // Game görünümünün sabit çözünürlüğünü ayarlar (yansıma; Unity sürümüne göre değişebilir).
+        static void OyunBoyutu(int w, int h)
+        {
+            try
+            {
+                var asm = typeof(UnityEditor.Editor).Assembly;
+                var gvTip = asm.GetType("UnityEditor.GameView");
+                var sizesTip = asm.GetType("UnityEditor.GameViewSizes");
+                var tekil = typeof(ScriptableSingleton<>).MakeGenericType(sizesTip);
+                var ornek = tekil.GetProperty("instance").GetValue(null, null);
+                var grup = sizesTip.GetProperty("currentGroup").GetValue(ornek, null);
+                var grupTip = grup.GetType();
+                var boyTip = asm.GetType("UnityEditor.GameViewSize");
+                var turTip = asm.GetType("UnityEditor.GameViewSizeType");
+                int toplam = (int)grupTip.GetMethod("GetTotalCount").Invoke(grup, null);
+                int idx = -1;
+                for (int i = 0; i < toplam; i++)
+                {
+                    var bs = grupTip.GetMethod("GetGameViewSize").Invoke(grup, new object[] { i });
+                    int bw = (int)boyTip.GetProperty("width").GetValue(bs, null), bh = (int)boyTip.GetProperty("height").GetValue(bs, null);
+                    int tur = (int)boyTip.GetProperty("sizeType").GetValue(bs, null);
+                    if (tur == 1 && bw == w && bh == h) { idx = i; break; }
+                }
+                if (idx < 0)
+                {
+                    var yeni = boyTip.GetConstructor(new[] { turTip, typeof(int), typeof(int), typeof(string) }).Invoke(new object[] { Enum.ToObject(turTip, 1), w, h, "KT_" + w + "x" + h });
+                    grupTip.GetMethod("AddCustomSize").Invoke(grup, new object[] { yeni });
+                    idx = toplam;
+                }
+                var gv = EditorWindow.GetWindow(gvTip);
+                gvTip.GetProperty("selectedSizeIndex", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).SetValue(gv, idx, null);
+                gv.Repaint();
+            }
+            catch (Exception e) { Not("Game boyutu ayarlanamadı (" + w + "x" + h + "): " + e.Message); }
         }
 
         // Hedef adıma gelene kadar ilerler: etkileşimi tamamlar, soruyu doğru seçenek bulunana kadar dener.

@@ -23,7 +23,7 @@ namespace KizilTohum
 
         GorevYoneticisi y;
         Font font, fontKalin, fontBaslik;
-        RectTransform kok, alan;
+        RectTransform kok, alan, guv;
         Text sayac, sayfaYazi, bos;
         Button onceki, sonraki;
         readonly List<Kart> kartlar = new List<Kart>();
@@ -39,40 +39,40 @@ namespace KizilTohum
             var zemin = go.AddComponent<Image>();   // arkadaki arayüzü tıklamaya kapatır
             zemin.color = Tema.Base;
 
+            // Kapla: sayfa görseli ekranı kaplar, kayıt alanı sayfayla birlikte hizalı kalır. Guvenli: başlık, düğmeler.
+            var kapla = EkranKatmani.Olustur("Kapla", kok, EkranKatmani.Mod.Kapla);
+            guv = EkranKatmani.Olustur("Guvenli", kok, EkranKatmani.Mod.Guvenli);
             var sp = Resources.Load<Sprite>("Gorseller/Defter/defter_sayfasi");
             kareliSayfa = sp != null;
             if (sp == null) sp = Resources.Load<Sprite>("Gorseller/Bekci_Defteri/defter_sayfa_bos");
             if (sp != null)
             {
-                var im = Yuz("Sayfa", kok, Color.white);
+                var im = Yuz("Sayfa", kapla, Color.white);
                 im.sprite = sp; im.raycastTarget = false;
                 Doldur(im.rectTransform);
-                var oran = im.gameObject.AddComponent<AspectRatioFitter>();   // oranı koruyarak ekranı kaplar
-                oran.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
-                oran.aspectRatio = sp.rect.width / Mathf.Max(1f, sp.rect.height);
             }
 
             // sağdaki boş masa alanı: ikon, başlık, sayaç, sayfa düğmeleri
             var ikon = Resources.Load<Sprite>("Gorseller/Ikonlar/ikon_defter");
             if (ikon != null)
             {
-                var ii = Yuz("Ikon", kok, Color.white);
+                var ii = Yuz("Ikon", guv, Color.white);
                 ii.sprite = ikon; ii.preserveAspect = true; ii.raycastTarget = false;
                 Konum(ii.rectTransform, 0.72f, 0.62f, 0.90f, 0.86f);
             }
-            var bz = Yuz("BaslikZemin", kok, new Color(0.07f, 0.06f, 0.06f, 0.6f));   // başlığın arkasında koyu yarı saydam zemin
+            var bz = Yuz("BaslikZemin", guv, new Color(0.07f, 0.06f, 0.06f, 0.6f));   // başlığın arkasında koyu yarı saydam zemin
             bz.raycastTarget = false;
             Konum(bz.rectTransform, 0.65f, 0.49f, 0.97f, 0.59f);
-            var baslik = Yazi("Baslik", kok, Tema.YaziBaslik, Tema.Marka, TextAnchor.MiddleCenter, fontBaslik);
+            var baslik = Yazi("Baslik", guv, Tema.YaziBaslik, Tema.Marka, TextAnchor.MiddleCenter, fontBaslik);
             baslik.text = "BEKÇİ DEFTERİ";
             Konum(baslik.rectTransform, 0.65f, 0.49f, 0.97f, 0.59f);
-            sayac = Yazi("Sayac", kok, Tema.YaziOrta, Tema.Beyaz, TextAnchor.MiddleCenter, fontKalin);
+            sayac = Yazi("Sayac", guv, Tema.YaziOrta, Tema.Beyaz, TextAnchor.MiddleCenter, fontKalin);
             Konum(sayac.rectTransform, 0.64f, 0.40f, 0.98f, 0.47f);
 
-            alan = (RectTransform)Bos("Alan", kok).transform;
+            alan = (RectTransform)Bos("Alan", kapla).transform;
             if (kareliSayfa) Konum(alan, SayfaX0, 1f - SayfaY1, SayfaX1, 1f - SayfaY0);
             else Konum(alan, 0.07f, 0.12f, 0.93f, 0.87f);
-            bos = Yazi("Bos", kok, Tema.YaziOrta, Tema.DefterMurekkep, TextAnchor.MiddleCenter, font);
+            bos = Yazi("Bos", kapla, Tema.YaziOrta, Tema.DefterMurekkep, TextAnchor.MiddleCenter, font);
             bos.text = "Henüz kayıt yok.\nSoruları yanıtladıkça öğrendiğin kurallar buraya yazılır.";
             if (kareliSayfa) Konum(bos.rectTransform, SayfaX0 + 0.02f, 0.40f, SayfaX1 - 0.02f, 0.60f);
             else Konum(bos.rectTransform, 0.2f, 0.35f, 0.8f, 0.65f);
@@ -84,7 +84,7 @@ namespace KizilTohum
             onceki.onClick.AddListener(() => { sayfa = Mathf.Max(0, sayfa - 1); Ciz(); });
             sonraki.onClick.AddListener(() => { sayfa++; Ciz(); });
             IkonKoy(geri, "ikon_geri"); IkonKoy(onceki, "ikon_geri"); IkonKoy(sonraki, "ikon_ileri");
-            sayfaYazi = Yazi("SayfaNo", kok, Tema.YaziKucuk, Tema.Beyaz, TextAnchor.MiddleCenter, fontKalin);
+            sayfaYazi = Yazi("SayfaNo", guv, Tema.YaziKucuk, Tema.Beyaz, TextAnchor.MiddleCenter, fontKalin);
             Konum(sayfaYazi.rectTransform, 0.78f, 0.30f, 0.84f, 0.37f);
 
             go.SetActive(false);
@@ -168,7 +168,7 @@ namespace KizilTohum
 
         Button DugmeYap(string ad, string yazi, float x0, float y0, float x1, float y1)
         {
-            var im = Yuz(ad, kok, Tema.Kontrol);
+            var im = Yuz(ad, guv, Tema.Kontrol);
             var sp = Resources.Load<Sprite>("Gorseller/Arayuz/secenek_butonu_normal_9slice");
             if (sp != null) { im.sprite = sp; im.type = Image.Type.Sliced; im.color = Color.white; }
             Konum(im.rectTransform, x0, y0, x1, y1);
