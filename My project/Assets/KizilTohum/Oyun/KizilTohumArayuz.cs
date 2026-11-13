@@ -391,7 +391,7 @@ namespace KizilTohum
             harita.Kur(kok, font, fontKalin, fontBaslik, y);
             harita.GorevSecildi = HaritaGorevSecildi;
             harita.MenuIstendi = () => { harita.Kapat(); Goster(true); };
-            harita.VideoOynat = (dosya, bitince) => VideoOynat(dosya, harita.transform, true, bitince);
+            harita.VideoOynat = (dosya, bitince) => VideoOynat(dosya, harita.Kok, true, bitince);
         }
 
         // ---------- koloni haritası ----------

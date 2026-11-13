@@ -61,6 +61,7 @@ namespace KizilTohum
         public Func<string, Action<bool>, bool> VideoOynat;
 
         public bool Acik { get { return kok != null && kok.gameObject.activeSelf; } }
+        public RectTransform Kok { get { return kok; } }   // video gibi üst katmanlar bunun altına konur
 
         GorevYoneticisi y;
         Font font, fontKalin, fontBaslik;
