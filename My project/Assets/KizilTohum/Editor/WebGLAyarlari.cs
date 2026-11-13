@@ -16,7 +16,8 @@ namespace KizilTohum.Editor
             PlayerSettings.WebGL.decompressionFallback = true;
             PlayerSettings.WebGL.dataCaching = true;
             PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.None;         // boyut için
-            PlayerSettings.WebGL.template = "APPLICATION:Default";
+            PlayerSettings.WebGL.template = "PROJECT:KizilTohum";   // Assets/WebGLTemplates/KizilTohum (letterbox 16:9, tam ekran düğmesi)
+            PlayerSettings.SplashScreen.show = false;               // "Made with Unity" açılış ekranı kapalı
             PlayerSettings.SetIl2CppCodeGeneration(hedef, Il2CppCodeGeneration.OptimizeSize);   // Code Optimization = Size
             PlayerSettings.SetManagedStrippingLevel(hedef, ManagedStrippingLevel.Medium);
             PlayerSettings.runInBackground = true;
