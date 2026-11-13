@@ -17,6 +17,7 @@ namespace KizilTohum.Editor
             ti.alphaIsTransparency = true;
             ti.maxTextureSize = 2048;
             ti.textureCompression = TextureImporterCompression.Compressed;
+            ti.compressionQuality = 50; // Normal Quality (WebGL yük boyutu için; Harita/ 1920x1080 sahneleri dahil)
             string ad = System.IO.Path.GetFileNameWithoutExtension(assetPath);
             if (ad.EndsWith("_9slice"))
             {

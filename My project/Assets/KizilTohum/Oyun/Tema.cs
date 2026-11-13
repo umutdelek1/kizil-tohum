@@ -121,6 +121,49 @@ namespace KizilTohum
         public const float KartBaslangicOlcek = 0.6f;
         public const float KartBaslangicAci = 8f;
 
+        // ---------- koloni haritası ----------
+        public static readonly Color Kehribar = Hex("FFB347");
+        public static readonly string[] HaritaResimleri = { "Harita/harita_gunduz", "Harita/harita_gunbatimi", "Harita/harita_gece" }; // 0 / 1 / 2+ tamamlanan görev
+        public const float HaritaCaprazSure = 1.5f;       // gündüz → gün batımı → gece erimesi
+        public const float HaritaDalisSure = 0.9f;        // tıklanan noktaya kamera dalışı
+        public const float HaritaDalisOlcek = 2.4f;
+        public const float HaritaKararmaBasi = 0.55f;     // dalışın bu oranından sonra siyaha erir
+        public const float HaritaSurukle = 12f;           // kendi kendine yavaş sürüklenme (px)
+        public const float HaritaSurukleHiz = 0.3f;
+        public const float HaritaParalaks = 20f;          // fare paralaksı (px)
+        public const float HaritaTemelOlcek = 1.07f;      // sürüklenirken kenarlar görünmesin
+        public const float HaritaNoktaBoyu = 96f;
+        public const float HaritaHoverOlcek = 1.25f;
+        public const float HaritaOlcekHiz = 14f;
+        public const float HaritaNabizSure = 1.6f;
+        public const float HaritaNabizOlcek = 1.9f;
+        public const float HaritaBilgiGenislik = 460f;
+        public const float HaritaBilgiYukseklik = 120f;
+        public const float HaritaBilgiUzaklik = 70f;
+        public const string HaritaBaslik = "KOLONİ HARİTASI";
+        public const string HaritaKapaliMetni = "Demoda kapalı";
+
+        /// <summary>Haritadaki bir nokta. x,y normalize (sol üst 0,0); gorevId boşsa kilitli.</summary>
+        public struct HaritaNoktaTanimi
+        {
+            public string id, yer, gorevId;
+            public float x, y;
+            public HaritaNoktaTanimi(string id, string yer, float x, float y, string gorevId)
+            { this.id = id; this.yer = yer; this.x = x; this.y = y; this.gorevId = gorevId; }
+        }
+
+        // Konumları buradan değiştir.
+        public static readonly HaritaNoktaTanimi[] HaritaNoktalari =
+        {
+            new HaritaNoktaTanimi("kubbe_sera",   "Ana Kubbe Serası", 0.190f, 0.42f, "KT08"),
+            new HaritaNoktaTanimi("laboratuvar",  "Laboratuvar",      0.400f, 0.29f, ""),
+            new HaritaNoktaTanimi("tohum_duvari", "Tohum Duvarı",     0.646f, 0.27f, "KT01"),
+            new HaritaNoktaTanimi("su_tanklari",  "Su Tankları",      0.835f, 0.32f, "KT04"),
+            new HaritaNoktaTanimi("komuta",       "Komuta Merkezi",   0.610f, 0.74f, ""),
+            new HaritaNoktaTanimi("inis_pisti",   "İniş Pisti",       0.842f, 0.59f, ""),
+            new HaritaNoktaTanimi("yol_kavsagi",  "Yol Kavşağı",      0.113f, 0.73f, ""),
+        };
+
         // ---------- geçişler ----------
         public const float CaprazSure = 0.6f;
         public const float SarsintiSure = 0.4f;

@@ -40,6 +40,9 @@ namespace KizilTohum
         RawImage videoGorsel;
         Coroutine videoZaman;
         int videoKapandiKare = -1;
+        System.Action<bool> videoBitince; // harita dalış videosu için: true = oynatılamadı
+
+        HaritaEkrani harita;
 
         // arayüz hareketi (hepsi Update'te unscaledDeltaTime ile akar)
         string metinTam = "";
@@ -105,7 +108,7 @@ namespace KizilTohum
             }
             Kur();
             Bagla();
-            oyun.KlavyeKilitli = () => DaktiloKilidi() || menu.activeSelf || kartPaneli.activeSelf || sonEkrani.activeSelf
+            oyun.KlavyeKilitli = () => DaktiloKilidi() || (harita != null && harita.Acik) || menu.activeSelf || kartPaneli.activeSelf || sonEkrani.activeSelf
                 || videoKok != null || Time.frameCount == videoKapandiKare;
             string derin = OyunDenetleyici.DerinBaglantiGorevi();
             if (!string.IsNullOrEmpty(derin) && oyun.GoreveGit(derin)) Goster(false);
@@ -313,7 +316,7 @@ namespace KizilTohum
             Text t5;
             var sb = Dugme("SonMenu", sonEkrani.transform, "Ana menü", Tema.Marka, out t5);
             Konum((RectTransform)sb.transform, 0.64f, 0.06f, 0.86f, 0.15f, 0, 0, 0, 0);
-            sb.onClick.AddListener(() => Goster(true));
+            sb.onClick.AddListener(() => HaritaAc());
             sonEkrani.SetActive(false);
 
             // menü
@@ -361,7 +364,7 @@ namespace KizilTohum
             alti.text = "TYT Biyoloji · Umut-1 Mars Kolonisi";
             Konum(alti.rectTransform, 0.055f, 0.60f, 0.40f, 0.67f, 0, 0, 0, 0);
 
-            MenuDugme("Yeni Oyun", 0.50f, Tema.YaziOrta, () => { oyun.YeniOyun(); Uygula(); Goster(false); });
+            MenuDugme("Yeni Oyun", 0.50f, Tema.YaziOrta, () => HaritaAc());
             MenuDugme("Devam Et", 0.41f, Tema.YaziOrta, () => { if (oyun.KayitVarMi && oyun.DevamEt()) { Uygula(); Goster(false); } });
             MenuDugme("Görev 1 · Yüz Çekmece", 0.32f, Tema.YaziKucuk, () => GorevAc("KT01"));
             MenuDugme("Görev 2 · Islak Toprakta Susuzluk", 0.245f, Tema.YaziKucuk, () => GorevAc("KT04"));
@@ -382,6 +385,33 @@ namespace KizilTohum
             Konum(menuNot.rectTransform, 0.05f, 0.005f, 0.7f, 0.06f, 0, 0, 0, 0);
             menuNot.text = "Boşluk/Enter: devam · 1-4: seçenek · H: ipucu · E: etkileşim";
             if (oyun.IcerikHatalari.Count > 0) menuNot.text = "İÇERİK HATASI: " + oyun.IcerikHatalari[0];
+
+            // koloni haritası: en son kurulur, böylece her şeyin üstünde durur
+            harita = gameObject.AddComponent<HaritaEkrani>();
+            harita.Kur(kok, font, fontKalin, fontBaslik, y);
+            harita.GorevSecildi = HaritaGorevSecildi;
+            harita.MenuIstendi = () => { harita.Kapat(); Goster(true); };
+            harita.VideoOynat = (dosya, bitince) => VideoOynat(dosya, harita.transform, true, bitince);
+        }
+
+        // ---------- koloni haritası ----------
+        void HaritaAc()
+        {
+            if (harita == null) { Goster(true); return; }
+            VideoIptal();
+            menu.SetActive(false);
+            oyunEkrani.SetActive(false);
+            Uygula();
+            harita.Ac();
+        }
+
+        void HaritaGorevSecildi(string id)
+        {
+            VideoIptal();
+            harita.Kapat();
+            Uygula();
+            if (oyun.GoreveGit(id)) Goster(false);
+            else HaritaAc(); // bilinmeyen görev: haritada kal
         }
 
         void GorevAc(string id)
@@ -529,7 +559,7 @@ namespace KizilTohum
 
         void Goster(bool menuGoster)
         {
-            if (menuGoster) VideoBitir();
+            if (menuGoster) VideoIptal();
             menu.SetActive(menuGoster);
             oyunEkrani.SetActive(!menuGoster);
             if (menuGoster) sonEkrani.SetActive(false);
@@ -548,7 +578,7 @@ namespace KizilTohum
             y.KavramKartiAcildi += k => { kartBaslik.text = k.baslik; kartMetin.text = k.konu + "\n\n" + k.metin; var ks = Spr("Kartlar/" + k.id); kartGorsel.sprite = ks; kartGorsel.gameObject.SetActive(ks != null); kartPaneli.SetActive(true); kartT = 0f; KartUygula(); };
             y.SimulasyonGuncellendi += SimCiz;
             y.OyunBitti += o => SonGoster(o);
-            y.GorevBitti += g => { };
+            y.GorevBitti += g => { if (harita != null) { harita.GorevTamamlandi(g.id); HaritaAc(); } };
         }
 
         // ---------- sinematik sahne ----------
@@ -722,23 +752,28 @@ namespace KizilTohum
 
         // ---------- video ----------
         // StreamingAssets/Video/<dosya> sessiz oynar; yoksa ya da hazırlanamazsa uyarı yazıp adımın resmine düşer.
-        void VideoBaslat(string dosya)
+        void VideoBaslat(string dosya) { VideoOynat(dosya, oyunEkrani.transform, false, null); }
+
+        // Başladıysa true. Harita (sessiz) için dosya yoksa uyarı yazmaz; hata olursa bitince(true) ile haber verir.
+        bool VideoOynat(string dosya, Transform ata, bool sessiz, System.Action<bool> bitince)
         {
-            VideoBitir();
-            if (string.IsNullOrEmpty(dosya)) return;
+            VideoIptal();
+            if (string.IsNullOrEmpty(dosya)) return false;
             string yol = Application.streamingAssetsPath + "/Video/" + dosya;
             if (!yol.Contains("://") && !System.IO.File.Exists(yol)) // WebGL/Android'de yol URL'dir, denetlenemez
             {
-                Debug.LogWarning("KizilTohum: video bulunamadı, sahne resmi kullanılıyor: " + yol);
-                return;
+                if (!sessiz) Debug.LogWarning("KizilTohum: video bulunamadı, sahne resmi kullanılıyor: " + yol);
+                return false;
             }
-            var zemin = Yuz("Video", oyunEkrani.transform, Tema.Base);
+            videoBitince = bitince;
+            var zemin = Yuz("Video", ata, Tema.Base);
             videoKok = zemin.gameObject;
             Doldur(zemin.rectTransform);
-            videoKok.transform.SetSiblingIndex(karartGrup.transform.GetSiblingIndex());
+            if (ata == oyunEkrani.transform) videoKok.transform.SetSiblingIndex(karartGrup.transform.GetSiblingIndex());
+            else videoKok.transform.SetAsLastSibling();
             var atla = videoKok.AddComponent<Button>();
             atla.transition = Selectable.Transition.None;
-            atla.onClick.AddListener(VideoBitir);
+            atla.onClick.AddListener(() => VideoBitir());
             var gor = Bos("Goruntu", videoKok.transform);
             videoGorsel = gor.AddComponent<RawImage>();
             videoGorsel.raycastTarget = false;
@@ -760,19 +795,20 @@ namespace KizilTohum
             {
                 if (p != video) return;
                 Debug.LogWarning("KizilTohum: video oynatılamadı (" + dosya + "): " + m);
-                VideoBitir();
+                VideoBitir(true);
             };
             vp.prepareCompleted += p =>
             {
                 if (p != video) return;
                 if (videoZaman != null) { StopCoroutine(videoZaman); videoZaman = null; }
-                if (p.width == 0 || p.height == 0) { Debug.LogWarning("KizilTohum: video boyutu okunamadı: " + dosya); VideoBitir(); return; }
+                if (p.width == 0 || p.height == 0) { Debug.LogWarning("KizilTohum: video boyutu okunamadı: " + dosya); VideoBitir(true); return; }
                 oran.aspectRatio = (float)p.width / p.height;
                 p.Play();
             };
             vp.loopPointReached += p => { if (p == video) VideoBitir(); };
             vp.Prepare();
             videoZaman = StartCoroutine(VideoZamanAsimi(vp, dosya));
+            return true;
         }
 
         IEnumerator VideoZamanAsimi(VideoPlayer vp, string dosya)
@@ -782,12 +818,12 @@ namespace KizilTohum
             if (vp == video && !vp.isPrepared)
             {
                 Debug.LogWarning("KizilTohum: video zamanında hazırlanamadı: " + dosya);
-                VideoBitir();
+                VideoBitir(true);
             }
         }
 
         // Video bitince, tıklanınca ya da Boşluk/Enter'a basılınca kapanır; altındaki sahne zaten kurulu.
-        void VideoBitir()
+        void VideoBitir(bool hata = false)
         {
             if (videoZaman != null) { StopCoroutine(videoZaman); videoZaman = null; }
             if (videoKok == null) return;
@@ -795,6 +831,15 @@ namespace KizilTohum
             Destroy(videoKok);
             videoKok = null; video = null; videoGorsel = null;
             videoKapandiKare = Time.frameCount;
+            var b = videoBitince; videoBitince = null;
+            if (b != null) b(hata);
+        }
+
+        // Dışarıdan iptal (menü, harita, yeni video): bitince geri çağrısı tetiklenmez.
+        void VideoIptal()
+        {
+            videoBitince = null;
+            VideoBitir();
         }
 
         void PortreSec(string konusan, string durum)
@@ -853,7 +898,7 @@ namespace KizilTohum
             panelT = 0f; PanelUygula();
             tepkiYazi.text = ""; ipucuYazi.text = ""; linYazi.text = "";
             SahneDegistir(s.adim);
-            VideoBaslat(s.adim.video);
+            if (harita == null || !harita.Acik) VideoBaslat(s.adim.video);
             bool soruTipi = s.adim.SecenekliMi;
             ipucuBtn.gameObject.SetActive(soruTipi);
             SecenekKur(s);
