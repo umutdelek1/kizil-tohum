@@ -12,8 +12,8 @@ namespace KizilTohum.Editor
         public static void Uygula()
         {
             var hedef = NamedBuildTarget.WebGL;
-            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;   // sıkıştırma kapalı (sunucu başlığı gerekmez)
-            PlayerSettings.WebGL.decompressionFallback = true;
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;   // Brotli: .br dosyaları için Dagitim/vercel.json başlıkları gerekir
+            PlayerSettings.WebGL.decompressionFallback = false;
             PlayerSettings.WebGL.dataCaching = true;
             PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.None;         // boyut için
             PlayerSettings.WebGL.template = "PROJECT:KizilTohum";   // Assets/WebGLTemplates/KizilTohum (letterbox 16:9, tam ekran düğmesi)
