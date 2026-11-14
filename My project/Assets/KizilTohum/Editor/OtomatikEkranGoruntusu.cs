@@ -24,6 +24,7 @@ namespace KizilTohum.Editor
         static IEnumerator<object> akis;
         const string BoyutBayrak = "KT_BoyutTesti";
         const string VideoBayrak = "KT_VideoTesti";
+        const string KartBayrak = "KT_KartTesti";
         static double bekleBitis, kosulBitis;
         static Func<bool> beklenen;
         static string klasor;
@@ -48,7 +49,8 @@ namespace KizilTohum.Editor
             if (!File.Exists(yol)) return;
             string komut;
             try { komut = File.ReadAllText(yol).Trim().ToLowerInvariant(); File.Delete(yol); } catch (Exception) { return; }
-            if (komut == "video") VideoTestiBaslat();
+            if (komut == "kart") { SessionState.SetBool(BoyutBayrak, false); SessionState.SetBool(VideoBayrak, false); SessionState.SetBool(KartBayrak, true); SessionState.SetBool(Bayrak, true); EditorApplication.EnterPlaymode(); }
+            else if (komut == "video") VideoTestiBaslat();
             else if (komut == "boyut") BoyutTestiBaslat();
             else if (komut == "ekran") MenudenBaslat();
         }
@@ -117,7 +119,8 @@ namespace KizilTohum.Editor
             for (int i = 0; i < YedekAnahtarlar.Length; i++)
                 if (PlayerPrefs.HasKey(YedekAnahtarlar[i])) yedek[YedekAnahtarlar[i]] = PlayerPrefs.GetString(YedekAnahtarlar[i]);
 
-            akis = (SessionState.GetBool(VideoBayrak, false) ? VideoAkisi() : SessionState.GetBool(BoyutBayrak, false) ? BoyutAkisi() : Akis()).GetEnumerator();
+            bool kartTesti = SessionState.GetBool(KartBayrak, false); SessionState.SetBool(KartBayrak, false);   // tek seferlik
+            akis = (kartTesti ? KartAkisi() : SessionState.GetBool(VideoBayrak, false) ? VideoAkisi() : SessionState.GetBool(BoyutBayrak, false) ? BoyutAkisi() : Akis()).GetEnumerator();
             bekleBitis = EditorApplication.timeSinceStartup; beklenen = null;
             EditorApplication.update += Guncelle;
         }
@@ -478,6 +481,26 @@ namespace KizilTohum.Editor
                 d.Kapat();
             }
             yield return 1.5f;
+        }
+
+        // ---------- kavram kartı görsel testi ----------
+        static IEnumerable<object> KartAkisi()
+        {
+            yield return (Func<bool>)(() => Arayuz != null && Yonetici != null);
+            yield return 3f;
+            Cagir("Goster", false); yield return 1f;
+            var f = typeof(GorevYoneticisi).GetField("KavramKartiAcildi", BindingFlags.Instance | BindingFlags.NonPublic);
+            var ev = f != null ? f.GetValue(Yonetici) as Action<Kart> : null;
+            foreach (var id in new[] { "osmoz", "plazmoliz" })
+            {
+                Kart kart = null;
+                foreach (var k in Yonetici.Icerik.kartlar) if (k.id == id) kart = k;
+                if (ev == null || kart == null) { Not("Kart açılamadı: " + id); continue; }
+                ev(kart);
+                yield return 1.5f;
+                Cek("60_kart_" + id); yield return 0.5f;
+                KartKapat(); yield return 0.5f;
+            }
         }
 
         // ---------- sahne videosu + "Yakında" kartı testi ----------
