@@ -75,6 +75,8 @@ namespace KizilTohum
         RectTransform kok, dunya, bilgi;
         Image arkaA, arkaB, karart;
         Image bilgiIkon, bilgiKart;
+        GameObject yakinda;                       // kilitli işaret "Yakında" kartı (tam ekran karartma + güvenli alanda kart)
+        Text yakindaYer, yakindaKonu, yakindaIpucu;
         Text sayac, bilgiYer, bilgiGorev;
         Canvas canvas;
         readonly List<Nokta> noktalar = new List<Nokta>();
@@ -175,6 +177,7 @@ namespace KizilTohum
             karart = Yuz("Karart", kok, Tema.Saydam);
             Doldur(karart.rectTransform);
             karart.raycastTarget = false;
+            YakindaKur();
 
             go.SetActive(false);
         }
@@ -257,6 +260,7 @@ namespace KizilTohum
         public void Ac()
         {
             kok.gameObject.SetActive(true);
+            if (yakinda != null) yakinda.SetActive(false);
             mesgul = false; dalisT = -1f; dalisNokta = null;
             karart.color = Tema.Saydam;
             dunya.localScale = Vector3.one * Tema.HaritaTemelOlcek;
@@ -306,6 +310,7 @@ namespace KizilTohum
         public void Kapat()
         {
             BilgiGizle();
+            YakindaKapat();
             if (kok != null) kok.gameObject.SetActive(false);
         }
 
@@ -393,10 +398,78 @@ namespace KizilTohum
             if (bilgiNokta != null && bilgi.gameObject.activeSelf) BilgiYerlestir(bilgiNokta);
         }
 
+        // ---------- "Yakında" kartı (kilitli işaretler) ----------
+        // Karartma tüm ekranı kaplar ve dışarı tıklayınca kapatır; kart 16:9 güvenli alanda ortalanır.
+        // Not: oyunda henüz hiçbir ses dosyası/çalıcı yok; "kilitli" efekti için KilitSesi kancası bırakıldı.
+        public Action KilitSesi;
+
+        void YakindaKur()
+        {
+            var dim = Yuz("Yakinda", kok, Tema.Orten);
+            yakinda = dim.gameObject;
+            Doldur(dim.rectTransform);
+            var kapatDis = yakinda.AddComponent<Button>();
+            kapatDis.transition = Selectable.Transition.None; kapatDis.targetGraphic = dim;
+            kapatDis.onClick.AddListener(YakindaKapat);   // dışarı tıklayınca kapanır
+            var guv = EkranKatmani.Olustur("Guvenli", yakinda.transform, EkranKatmani.Mod.Guvenli);
+
+            var kart = Yuz("Kart", guv, Tema.Kart);
+            var ks = Spr("Arayuz/kavram_karti_cercevesi_9slice");
+            if (ks != null) { kart.sprite = ks; kart.type = Image.Type.Sliced; kart.color = Color.white; }
+            Konum(kart.rectTransform, 0.28f, 0.24f, 0.72f, 0.76f, 0, 0, 0, 0);
+            var kartTik = kart.gameObject.AddComponent<Button>();   // karta tıklamak kapatmaz
+            kartTik.transition = Selectable.Transition.None; kartTik.targetGraphic = kart;
+
+            var kilit = Spr("Ikonlar/ikon_kilit");
+            if (kilit != null)
+            {
+                var ki = Yuz("Kilit", kart.transform, Color.white);
+                ki.sprite = kilit; ki.preserveAspect = true; ki.raycastTarget = false;
+                Konum(ki.rectTransform, 0.5f, 0.76f, 0.5f, 0.76f, -40, -40, 40, 40);
+            }
+            yakindaYer = Yazi("Yer", kart.transform, Tema.YaziBaslik, Tema.Konusan, TextAnchor.MiddleCenter, fontBaslik);
+            Konum(yakindaYer.rectTransform, 0.04f, 0.56f, 0.96f, 0.70f, 0, 0, 0, 0);
+            var durum = Yazi("Durum", kart.transform, Tema.YaziOrta, Tema.Soluk, TextAnchor.MiddleCenter, fontKalin);
+            durum.text = "Bu dosya henüz açılmadı";
+            Konum(durum.rectTransform, 0.04f, 0.47f, 0.96f, 0.56f, 0, 0, 0, 0);
+            yakindaKonu = Yazi("Konu", kart.transform, Tema.YaziOrta, Tema.Marka, TextAnchor.MiddleCenter, fontKalin);
+            Konum(yakindaKonu.rectTransform, 0.04f, 0.37f, 0.96f, 0.46f, 0, 0, 0, 0);
+            yakindaIpucu = Yazi("Ipucu", kart.transform, Tema.YaziOrta, Tema.Beyaz, TextAnchor.UpperCenter, font);
+            Konum(yakindaIpucu.rectTransform, 0.08f, 0.2f, 0.92f, 0.37f, 0, 0, 0, 0);
+
+            var kb = Yuz("Kapat", kart.transform, Tema.Kontrol);
+            var bs = Spr("Arayuz/secenek_butonu_normal_9slice");
+            if (bs != null) { kb.sprite = bs; kb.type = Image.Type.Sliced; kb.color = Color.white; }
+            Konum(kb.rectTransform, 0.34f, 0.04f, 0.66f, 0.15f, 0, 0, 0, 0);
+            var btn = kb.gameObject.AddComponent<Button>();
+            btn.targetGraphic = kb;
+            var bt = Yazi("Yazi", kb.transform, Tema.YaziOrta, Tema.Beyaz, TextAnchor.MiddleCenter, fontKalin);
+            bt.text = "Kapat";
+            Doldur(bt.rectTransform);
+            btn.onClick.AddListener(YakindaKapat);
+            yakinda.SetActive(false);
+        }
+
+        void YakindaGoster(string noktaId)
+        {
+            YakindaKartlari.Kart k;
+            if (!YakindaKartlari.Bul(noktaId, out k)) return;
+            BilgiGizle();
+            yakindaYer.text = k.yer;
+            yakindaKonu.text = "Konu: " + k.konu;
+            yakindaIpucu.text = k.ipucu;
+            yakinda.transform.SetAsLastSibling();
+            yakinda.SetActive(true);
+            if (KilitSesi != null) KilitSesi();
+        }
+
+        void YakindaKapat() { if (yakinda != null) yakinda.SetActive(false); }
+
         // ---------- etkileşim ----------
         void Tikla(Nokta n)
         {
-            if (mesgul || n.durum == Durum.Kilitli) return;
+            if (mesgul) return;
+            if (n.durum == Durum.Kilitli) { YakindaGoster(n.t.id); return; }   // kilitli: "Yakında" kartı
             mesgul = true;
             BilgiGizle();
             string dosya = "Harita_dalis_" + n.t.id + ".mp4";

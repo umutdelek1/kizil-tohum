@@ -191,9 +191,9 @@ namespace KizilTohum
             new HaritaNoktaTanimi("laboratuvar",  "Laboratuvar",      0.400f, 0.29f, ""),
             new HaritaNoktaTanimi("tohum_duvari", "Tohum Duvarı",     0.646f, 0.27f, "KT04"),
             new HaritaNoktaTanimi("su_tanklari",  "Su Tankları",      0.835f, 0.32f, "KT08"),
-            new HaritaNoktaTanimi("komuta",       "Komuta Merkezi",   0.610f, 0.74f, ""),
+            new HaritaNoktaTanimi("komuta",       "Radar İstasyonu",  0.610f, 0.74f, ""),
             new HaritaNoktaTanimi("inis_pisti",   "İniş Pisti",       0.842f, 0.59f, ""),
-            new HaritaNoktaTanimi("yol_kavsagi",  "Yol Kavşağı",      0.113f, 0.73f, ""),
+            new HaritaNoktaTanimi("yol_kavsagi",  "Yer İstasyonu",    0.113f, 0.73f, ""),
         };
 
         // ---------- KT04 hücre (osmoz) ----------
