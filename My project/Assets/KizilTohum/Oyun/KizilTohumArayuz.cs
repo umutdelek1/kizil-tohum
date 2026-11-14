@@ -87,7 +87,8 @@ namespace KizilTohum
         Text duvarYazi, gorevBaslik, konusanYazi, metinYazi, ipucuYazi, linYazi, tepkiYazi, simYazi, kartBaslik, kartMetin, sonYazi, menuNot;
         RectTransform secenekKap, simKap;
         Button devamBtn, ipucuBtn;
-        Image sonMadalya, kapakZemin, kapakResim;
+        Image sonMadalya, kapakZemin, kapakResim, sonOdulResim;
+        RectTransform sonOdulKap;
         RectTransform oyunGuvenli, menuGuvenli;
         RectTransform kokRect;
         Text kapakYazi;
@@ -367,8 +368,21 @@ namespace KizilTohum
             // madalya: panelin solunda, sona göre değişir (SonGoster'da doldurulur)
             sonMadalya = Yuz("Madalya", sonG, Color.white);
             sonMadalya.preserveAspect = true; sonMadalya.raycastTarget = false;
-            Konum(sonMadalya.rectTransform, 0.05f, 0.28f, 0.37f, 0.72f, 0, 0, 0, 0);   // panelin (x 0.52) soluna sığar, altına girmez
+            Konum(sonMadalya.rectTransform, 0.335f, 0.32f, 0.505f, 0.62f, 0, 0, 0, 0);   // illüstrasyon ile panel (x 0.52) arasındaki boşluk
             sonMadalya.enabled = false;
+            // ödül illüstrasyonu: sol tarafta dikey, yuvarlak köşeli ve ince bakır çerçeveli (güvenli alanda; panelle çakışmaz)
+            var odulKap = Yuz("OdulKap", sonG, Color.white);
+            odulKap.sprite = YuvarlakKutu(false); odulKap.type = Image.Type.Sliced; odulKap.raycastTarget = false;
+            Konum(odulKap.rectTransform, 0.04f, 0.08f, 0.32f, 0.92f, 0, 0, 0, 0);
+            odulKap.gameObject.AddComponent<Mask>().showMaskGraphic = false;   // köşeler yuvarlak kırpılır
+            sonOdulKap = odulKap.rectTransform;
+            sonOdulResim = Yuz("OdulResim", odulKap.transform, Color.white);
+            sonOdulResim.preserveAspect = false; sonOdulResim.raycastTarget = false;
+            Doldur(sonOdulResim.rectTransform);
+            var odulCerceve = Yuz("OdulCerceve", sonOdulKap, Tema.OdulCerceve);
+            odulCerceve.sprite = YuvarlakKutu(true); odulCerceve.type = Image.Type.Sliced; odulCerceve.raycastTarget = false;
+            Doldur(odulCerceve.rectTransform);
+            sonOdulKap.gameObject.SetActive(false);
             sonEkrani.SetActive(false);
 
             // menü
@@ -378,7 +392,7 @@ namespace KizilTohum
             var menuKapla = EkranKatmani.Olustur("Kapla", menu.transform, EkranKatmani.Mod.Kapla);
             menuZemin = Yuz("Zemin", menuKapla, Tema.MenuZemin);
             Doldur(menuZemin.rectTransform); menuZemin.raycastTarget = false;
-            var yeniKapak = Spr("Menu/menu_kapak");                 // yeni ana menü arka planı; yoksa eskisi
+            var yeniKapak = Spr("Menu/menu_arka_plan_v2") ?? Spr("Menu/menu_kapak");   // ana menü arka planı v2; yoksa eski menu_kapak
             var kapak = yeniKapak != null ? yeniKapak : Spr("Menu/kapak_arka_plan");
             if (kapak != null) { menuZemin.sprite = kapak; menuZemin.color = yeniKapak != null ? Color.white : Tema.KapakTon; }
             // canlı arka plan: Ada çekmecede — katmanlar fareyle ve kendiliğinden hafifçe kayar
@@ -496,6 +510,38 @@ namespace KizilTohum
             Uygula();
             if (oyun.GoreveGit(id)) { Goster(false); KapakGoster(id); }
             else HaritaAc(); // bilinmeyen görev: haritada kal
+        }
+
+        static Sprite yuvarlakDolu, yuvarlakHalka;
+
+        // 9-slice yuvarlak köşeli kutu: dolu (maske) ya da ince halka (çerçeve). Yarıçap 18, çerçeve kalınlığı 3 px.
+        static Sprite YuvarlakKutu(bool halka)
+        {
+            if (halka ? yuvarlakHalka != null : yuvarlakDolu != null) return halka ? yuvarlakHalka : yuvarlakDolu;
+            const int n = 64; const float r = 18f, k = 3f;
+            var tex = new Texture2D(n, n, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Clamp; tex.filterMode = FilterMode.Bilinear;
+            float yari = n * 0.5f;
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    float px = Mathf.Abs(x + 0.5f - yari), py = Mathf.Abs(y + 0.5f - yari);
+                    float dis = Kutu(px, py, yari, r);
+                    float a = Mathf.Clamp01(0.5f - dis);
+                    if (halka) a -= Mathf.Clamp01(0.5f - Kutu(px, py, yari - k, Mathf.Max(0f, r - k)));
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Clamp01(a)));
+                }
+            tex.Apply();
+            var sp = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(22, 22, 22, 22));
+            if (halka) yuvarlakHalka = sp; else yuvarlakDolu = sp;
+            return sp;
+        }
+
+        // yuvarlak köşeli dikdörtgenin işaretli uzaklığı (merkeze göre mutlak koordinatlar)
+        static float Kutu(float px, float py, float yari, float r)
+        {
+            float qx = px - (yari - r), qy = py - (yari - r);
+            return Mathf.Sqrt(Mathf.Max(qx, 0f) * Mathf.Max(qx, 0f) + Mathf.Max(qy, 0f) * Mathf.Max(qy, 0f)) + Mathf.Min(Mathf.Max(qx, qy), 0f) - r;
         }
 
         static Sprite gradientSprite;
@@ -1485,6 +1531,15 @@ namespace KizilTohum
             if (o.son != null && !string.IsNullOrEmpty(o.son.gorsel3d)) sz = Spr(o.son.gorsel3d);   // 3D final; yoksa eskisi
             if (sz == null && o.son != null && !string.IsNullOrEmpty(o.son.gorsel)) sz = Spr("Sahneler/" + o.son.gorsel);
             if (sz != null) { sonZemin.sprite = sz; sonZemin.color = Tema.SonTon; }
+            if (sonOdulKap != null)
+            {
+                string on = o.son != null ? o.son.ad : "";
+                // her son kendi temasına uyan ödül görselini alır (bkz. rapor): Yeşil Kubbe → KT01 sera, Yarım Sera → KT04 filizler, Tek Çekmece → KT08 çekmece 47
+                string od = on.Contains("Kubbe") ? "odul_kt01_sera_mutlu" : on.Contains("Yarım") ? "odul_kt04_filizler" : on.Contains("Çekmece") ? "odul_kt08_cekmece_47" : null;
+                var osp = od != null ? Spr("Oduller/" + od) : null;
+                sonOdulResim.sprite = osp;
+                sonOdulKap.gameObject.SetActive(osp != null);
+            }
             if (sonMadalya != null)
             {
                 string sn = o.son != null ? o.son.ad : "";

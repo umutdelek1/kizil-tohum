@@ -36,28 +36,41 @@ html, body {
   outline: none;
 }
 
-/* Yükleme ekranı: koyu zemin, ortada başlık ve turuncu ilerleme çubuğu */
+/* Yükleme ekranı: tam ekran görsel (cover); logo, başlık ve ilerleme çubuğu alt ortada yarı saydam koyu şeritte.
+   Görsel TemplateData'dadır (Unity'den bağımsız yüklenir); şerit HTML'de olduğundan görsel gelmeden de anında görünür. */
 #unity-loading-container {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 28px;
-  background: #0c0a0c;
+  justify-content: flex-end;
+  padding-bottom: 6vh;
+  background: #0c0a0c url('yukleme_ekrani.jpg') center / cover no-repeat;
+}
+
+#unity-loading-band {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 56px 18px;
+  max-width: 92vw;
+  border-radius: 16px;
+  background: rgba(12, 10, 12, 0.68);
+  box-shadow: 0 0 0 1px rgba(184, 115, 51, 0.35);
 }
 
 #unity-loading-emblem {
-  width: 96px;
-  height: 96px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
 }
 
 #unity-loading-title {
   font-family: "Space Grotesk", "Segoe UI", Arial, sans-serif;
   font-weight: 700;
-  font-size: clamp(32px, 6vw, 64px);
+  font-size: clamp(26px, 4.5vw, 52px);
   letter-spacing: 0.04em;
   color: #e8683f;
   text-transform: uppercase;
@@ -91,9 +104,8 @@ html, body {
 }
 
 #unity-loading-note {
-  margin-top: -12px;
   font-family: "Inter", "Segoe UI", Arial, sans-serif;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.7);
   text-align: center;
 }

@@ -15,6 +15,7 @@ namespace KizilTohum
         // ---------- yüzey renkleri ----------
         public static readonly Color Base = Hex("0C0A0C");
         public static readonly Color Panel = Hex("171316", PanelAlfa);
+        public static readonly Color OdulCerceve = Hex("B87333");   // ödül illüstrasyonunun ince bakır çerçevesi
         public static readonly Color PanelHafif = Hex("171316", PanelHafifAlfa);
         public static readonly Color Kontrol = Hex("2B2428");
         public static readonly Color KontrolAlt = Hex("3A3036");
@@ -77,7 +78,7 @@ namespace KizilTohum
         public const int YaziMenuAlt = 24;         // TYT BİYOLOJİ
         public const float EmblemYuk = 190f;
         public const float MenuPanelGenislik = 0.32f;   // soldaki buton paneli: ekran genişliğinin %32'si
-        public const float MenuPanelOpaklik = 0.80f;    // solda %80 koyu, sağ kenarda şeffaf
+        public const float MenuPanelOpaklik = 0.90f;    // solda %90 koyu (parlak ufuk çizgisi üstünde başlık okunsun), sağ kenarda şeffaf
         public const float EmblemAralik = 24f;
 
         // ---------- boşluk ----------

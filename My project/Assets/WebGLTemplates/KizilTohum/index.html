@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Kızıl Tohum</title>
     <link rel="icon" type="image/png" href="TemplateData/favicon.png">
+    <link rel="preload" as="image" href="TemplateData/yukleme_ekrani.jpg">
     <link rel="stylesheet" href="TemplateData/style.css">
   </head>
   <body>
@@ -13,12 +14,14 @@
       <div id="unity-fullscreen-container">
         <canvas id="unity-canvas" width="{{{ WIDTH }}}" height="{{{ HEIGHT }}}" tabindex="-1"></canvas>
         <div id="unity-loading-container">
-          <img id="unity-loading-emblem" src="TemplateData/emblem.png" alt="">
-          <div id="unity-loading-title">Kızıl Tohum</div>
-          <div id="unity-progress-bar-empty">
+          <div id="unity-loading-band">
+            <img id="unity-loading-emblem" src="TemplateData/emblem.png" alt="">
+            <div id="unity-loading-title">Kızıl Tohum</div>
+            <div id="unity-progress-bar-empty">
             <div id="unity-progress-bar-full"></div>
+            </div>
+            <div id="unity-loading-note">Yükleniyor… ilk açılışta 1 dakika sürebilir</div>
           </div>
-          <div id="unity-loading-note">Yükleniyor… ilk açılışta 1 dakika sürebilir</div>
         </div>
       </div>
       <div id="unity-warning"> </div>

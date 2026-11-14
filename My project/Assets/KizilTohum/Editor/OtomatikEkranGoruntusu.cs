@@ -569,9 +569,12 @@ namespace KizilTohum.Editor
                 foreach (var x in Gec(a => a.id == "KT04-5")) yield return x;
                 yield return 2.8f; KartKapat();
                 Cek(on + "_03_kt04_5"); yield return 0.5f;
-                Cagir("SonGoster", new OyunSonu { son = ic.sonlar[0], saglik = 100 });
-                yield return 1.5f;
-                Cek(on + "_04_final"); yield return 0.5f;
+                for (int si = 0; si < ic.sonlar.Count; si++)
+                {
+                    Cagir("SonGoster", new OyunSonu { son = ic.sonlar[si], saglik = si == 0 ? 100 : si == 1 ? 70 : 40 });
+                    yield return 1.5f;
+                    Cek(on + "_04_final_" + si); yield return 0.5f;
+                }
                 Cagir("Goster", true); yield return 0.5f;
             }
             OyunBoyutu(1920, 1080);
