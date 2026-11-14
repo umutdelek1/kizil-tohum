@@ -78,24 +78,6 @@ html, body {
   border-radius: 4px;
 }
 
-/* Tam ekran düğmesi: sol alt köşede küçük */
-#unity-fullscreen-button {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
-  width: 28px;
-  height: 28px;
-  cursor: pointer;
-  opacity: 0.6;
-  background: url('fullscreen-button.png') no-repeat center;
-  background-size: contain;
-  z-index: 5;
-}
-
-#unity-fullscreen-button:hover {
-  opacity: 1;
-}
-
 #unity-warning {
   position: absolute;
   left: 50%;
@@ -106,4 +88,12 @@ html, body {
   padding: 10px;
   display: none;
   z-index: 10;
+}
+
+#unity-loading-note {
+  margin-top: -12px;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
 }

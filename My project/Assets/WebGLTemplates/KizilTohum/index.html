@@ -18,8 +18,8 @@
           <div id="unity-progress-bar-empty">
             <div id="unity-progress-bar-full"></div>
           </div>
+          <div id="unity-loading-note">Yükleniyor… ilk açılışta 1 dakika sürebilir</div>
         </div>
-        <div id="unity-fullscreen-button" title="Tam ekran"></div>
       </div>
       <div id="unity-warning"> </div>
     </div>
@@ -78,17 +78,35 @@
         const loadingContainer = document.querySelector("#unity-loading-container");
         const progressBarFull = document.querySelector("#unity-progress-bar-full");
 
+        // Yükleme çubuğu: gerçek ilerleme geldikçe o kullanılır; gelmezse (Content-Length yok) ilk ~60 sn
+        // %5'ten %90'a yavaşlayan (ease-out) sahte ilerleme gösterilir; bitince %100.
+        let gosterilen = 5, gercekGeldi = false;
+        const t0 = performance.now();
+        function cubuguCiz(yuzde) {
+          if (yuzde > gosterilen) gosterilen = yuzde;
+          progressBarFull.style.width = gosterilen + "%";
+        }
+        loadingContainer.style.display = "flex";
+        cubuguCiz(5);
+        const sahteSayac = setInterval(() => {
+          if (gercekGeldi) return;
+          const t = Math.min((performance.now() - t0) / 60000, 1);
+          cubuguCiz(5 + 85 * (1 - Math.pow(1 - t, 3)));
+        }, 200);
+
         createUnityInstance(canvas, config, (progress) => {
-          if (progress < 1) {
-            loadingContainer.style.display = "flex";
-            progressBarFull.style.width = 100 * progress + "%";
-          } else {
+          if (progress > 0 && progress < 1) {
+            gercekGeldi = true;
+            cubuguCiz(Math.min(progress * 100, 99));
+          } else if (progress >= 1) {
+            clearInterval(sahteSayac);
+            cubuguCiz(100);
             loadingContainer.style.display = "none";
           }
         }).then((unityInstance) => {
-          document.querySelector("#unity-fullscreen-button").onclick = () => {
-            unityInstance.SetFullscreen(1);
-          };
+          clearInterval(sahteSayac);
+          cubuguCiz(100);
+          loadingContainer.style.display = "none";
         }).catch((message) => {
           alert(message);
         });
