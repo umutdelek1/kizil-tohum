@@ -57,6 +57,8 @@ namespace KizilTohum
             public bool acikSpr, tamamSpr, kilitSpr;   // damla simgesi (sprite) var mı
             public Image nabizGorsel;
             public GameObject acikGorsel, tamamGorsel, kilitliGorsel;
+            public float gx, gy;                            // pencereye sığdırılmış konum (normalize, sol üst 0,0)
+            public Text etiket; public Image etiketKilit;   // görev adı etiketi (kilitlide yanında kilit ikonu)
             public Durum durum;
             public bool hover;
             public float olcek = 1f;
@@ -253,7 +255,44 @@ namespace KizilTohum
                 gov.rectTransform.sizeDelta = new Vector2(b * 0.26f, b * 0.19f);
                 gov.rectTransform.anchoredPosition = new Vector2(0f, -b * 0.05f);
             }
+            EtiketKur(n);
             noktalar.Add(n);
+        }
+
+        // Görev adı etiketi: pin ucunun hemen altında, koyu yarı saydam zemin üzerinde. Hover ölçeğinden etkilenmez (Govde'nin kardeşi).
+        void EtiketKur(Nokta n)
+        {
+            var zemin = Yuz("Etiket", n.kok, new Color(0.05f, 0.03f, 0.03f, 0.72f));
+            zemin.raycastTarget = false;
+            var r = zemin.rectTransform;
+            r.anchorMin = r.anchorMax = new Vector2(0.5f, 0.5f);
+            r.pivot = new Vector2(0.5f, 1f);
+            r.anchoredPosition = new Vector2(0f, -6f);
+            r.sizeDelta = new Vector2(220f, 34f);
+            n.etiket = Yazi("Yazi", r, Tema.YaziKucuk, Tema.Beyaz, TextAnchor.MiddleCenter, fontKalin);
+            n.etiket.text = n.t.yer;
+            n.etiket.horizontalOverflow = HorizontalWrapMode.Overflow;
+            Doldur(n.etiket.rectTransform);
+            n.etiketKilit = Yuz("Kilit", r, Color.white);
+            n.etiketKilit.sprite = Spr("Ikonlar/ikon_kilit");
+            n.etiketKilit.preserveAspect = true; n.etiketKilit.raycastTarget = false;
+            var kr = n.etiketKilit.rectTransform;
+            kr.anchorMin = kr.anchorMax = new Vector2(0f, 0.5f);
+            kr.pivot = new Vector2(0f, 0.5f);
+            kr.sizeDelta = new Vector2(24f, 24f);
+            kr.anchoredPosition = new Vector2(8f, 0f);
+            n.etiketKilit.enabled = false;
+        }
+
+        // Etiketi içeriğe göre boyutla; kilitlide solda kilit ikonu için yer aç.
+        void EtiketGuncelle(Nokta n)
+        {
+            bool kilit = n.durum == Durum.Kilitli && n.etiketKilit.sprite != null;
+            n.etiketKilit.enabled = kilit;
+            float w = Mathf.Max(80f, n.etiket.preferredWidth) + 28f + (kilit ? 26f : 0f);
+            ((RectTransform)n.etiket.transform.parent).sizeDelta = new Vector2(w, 34f);
+            n.etiket.rectTransform.offsetMin = new Vector2(kilit ? 30f : 0f, 0f);
+            n.etiket.color = n.durum == Durum.Kilitli ? Tema.Soluk : Tema.Beyaz;
         }
 
         // ---------- açma / kapama ----------
@@ -274,6 +313,7 @@ namespace KizilTohum
                 n.acikGorsel.SetActive(n.durum == Durum.Acik);
                 n.tamamGorsel.SetActive(n.durum == Durum.Tamam);
                 n.kilitliGorsel.SetActive(n.durum == Durum.Kilitli);
+                EtiketGuncelle(n);
                 // damla simgesi: pivot (0.5, 0), sivri uç nokta konumunda, simge noktanın hemen üstünde; daire: merkez
                 bool sp = SimgeVar(n);
                 var pv = new Vector2(0.5f, sp ? 0f : 0.5f);
@@ -316,12 +356,36 @@ namespace KizilTohum
 
         public void GorevTamamlandi(string gorevId) { HaritaKayit.Isaretle(gorevId); }
 
+        // Harita ekranı kaplamak için kırpılır (çok geniş/dar pencerede kenarlar kesilir). İşaretler görünür alanda
+        // (üst çubuğun altında, etiketiyle birlikte) kalacak şekilde en yakın noktaya çekilir: 16:9'da hiçbiri oynamaz.
+        void NoktalariSigdir()
+        {
+            var kokRt = canvas != null ? canvas.rootCanvas.transform as RectTransform : null;
+            if (kokRt == null) return;
+            Vector2 ekran = kokRt.rect.size;
+            if (ekran.x < 1f || ekran.y < 1f) return;
+            float oran = ekran.x / ekran.y, s = Tema.HaritaTemelOlcek;
+            Vector2 c = oran > EkranKatmani.TasarimOrani ? new Vector2(1f, oran / EkranKatmani.TasarimOrani) : new Vector2(EkranKatmani.TasarimOrani / oran, 1f);
+            float W = ekran.x * c.x, H = ekran.y * c.y;                    // çerçeve boyu (canvas birimi)
+            float vx = 1f / (c.x * s), vy = 1f / (c.y * s);                // görünen oran (çerçeve = 1)
+            float x0 = 0.5f - vx * 0.5f + 140f / W, x1 = 0.5f + vx * 0.5f - 140f / W;
+            float y0 = 0.5f - vy * 0.5f + (90f + 104f * s) / (H * s), y1 = 0.5f + vy * 0.5f - (56f * s + 10f) / (H * s);
+            for (int i = 0; i < noktalar.Count; i++)
+            {
+                var n = noktalar[i];
+                n.gx = x0 < x1 ? Mathf.Clamp(n.t.x, x0, x1) : n.t.x;
+                n.gy = y0 < y1 ? Mathf.Clamp(n.t.y, y0, y1) : n.t.y;
+                n.kok.anchorMin = n.kok.anchorMax = new Vector2(n.gx, 1f - n.gy);
+            }
+        }
+
         // ---------- döngü ----------
         void Update()
         {
             if (!Acik) return;
             float dt = Time.unscaledDeltaTime;
             float simdi = Time.unscaledTime;
+            NoktalariSigdir();
 
             // çapraz erime
             if (caprazT < Tema.HaritaCaprazSure)
@@ -359,7 +423,7 @@ namespace KizilTohum
                 float e = Mathf.SmoothStep(0f, 1f, t);
                 olcek = Tema.HaritaTemelOlcek * Mathf.Lerp(1f, Tema.HaritaDalisOlcek, e);
                 Rect r = dunya.rect;
-                Vector2 pn = new Vector2((dalisNokta.t.x - 0.5f) * r.width, (0.5f - dalisNokta.t.y) * r.height);
+                Vector2 pn = new Vector2((dalisNokta.gx - 0.5f) * r.width, (0.5f - dalisNokta.gy) * r.height);
                 Vector2 yeni = Vector2.Lerp(pn * Tema.HaritaTemelOlcek, Vector2.zero, e);
                 Vector2 T = yeni - pn * olcek;
                 float sx = (olcek - 1f) * r.width * 0.5f, sy = (olcek - 1f) * r.height * 0.5f; // kenarlar boş görünmesin

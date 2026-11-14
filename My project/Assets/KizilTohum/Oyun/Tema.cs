@@ -155,7 +155,9 @@ namespace KizilTohum
 
         // ---------- koloni haritası ----------
         public static readonly Color Kehribar = Hex("FFB347");
-        public static readonly string[] HaritaResimleri = { "Harita/harita_gunduz", "Harita/harita_gunbatimi", "Harita/harita_gece" }; // 0 / 1 / 2+ tamamlanan görev
+        // V2: tek görsel tüm aşamalarda kullanılır. Eski görseller dosyada duruyor:
+        // { "Harita/harita_gunduz", "Harita/harita_gunbatimi", "Harita/harita_gece" } (0 / 1 / 2+ tamamlanan görev)
+        public static readonly string[] HaritaResimleri = { "Harita/harita_koloni_v2" };
         public const float HaritaCaprazSure = 1.5f;       // gündüz → gün batımı → gece erimesi
         public const float HaritaDalisSure = 0.9f;        // tıklanan noktaya kamera dalışı
         public const float HaritaDalisOlcek = 2.4f;
@@ -188,13 +190,14 @@ namespace KizilTohum
         // Konumları buradan değiştir.
         public static readonly HaritaNoktaTanimi[] HaritaNoktalari =
         {
-            new HaritaNoktaTanimi("kubbe_sera",   "Ana Kubbe Serası", 0.190f, 0.42f, "KT01"),
-            new HaritaNoktaTanimi("laboratuvar",  "Laboratuvar",      0.400f, 0.29f, ""),
-            new HaritaNoktaTanimi("tohum_duvari", "Tohum Duvarı",     0.646f, 0.27f, "KT04"),
-            new HaritaNoktaTanimi("su_tanklari",  "Su Tankları",      0.835f, 0.32f, "KT08"),
-            new HaritaNoktaTanimi("komuta",       "Radar İstasyonu",  0.610f, 0.74f, ""),
-            new HaritaNoktaTanimi("inis_pisti",   "İniş Pisti",       0.842f, 0.59f, ""),
-            new HaritaNoktaTanimi("yol_kavsagi",  "Yer İstasyonu",    0.113f, 0.73f, ""),
+            // V2 harita (harita_koloni_v2.jpg): koordinat = pin ucunun hedef binası
+            new HaritaNoktaTanimi("kubbe_sera",   "Ana Kubbe Serası", 0.170f, 0.36f, "KT01"),
+            new HaritaNoktaTanimi("laboratuvar",  "Laboratuvar",      0.390f, 0.25f, ""),
+            new HaritaNoktaTanimi("tohum_duvari", "Tohum Duvarı",     0.660f, 0.22f, "KT04"),
+            new HaritaNoktaTanimi("su_tanklari",  "Su Tankları",      0.870f, 0.25f, "KT08"),
+            new HaritaNoktaTanimi("komuta",       "Radar İstasyonu",  0.620f, 0.78f, ""),
+            new HaritaNoktaTanimi("inis_pisti",   "İniş Pisti",       0.870f, 0.62f, ""),
+            new HaritaNoktaTanimi("yol_kavsagi",  "Yer İstasyonu",    0.120f, 0.84f, ""),
         };
 
         // ---------- KT04 hücre (osmoz) ----------
