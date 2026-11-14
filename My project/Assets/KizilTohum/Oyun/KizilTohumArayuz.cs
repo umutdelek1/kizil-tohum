@@ -498,7 +498,11 @@ namespace KizilTohum
             menuNot = Yazi("MenuNot", menuGuvenli, Tema.YaziKucuk, Tema.Soluk, TextAnchor.MiddleCenter);
             menuNot.alignment = TextAnchor.LowerLeft;
             Konum(menuNot.rectTransform, 0.056f, 0.0f, 0.7f, 0.040f, 0, 0, 0, 0);
-            menuNot.text = "Boşluk/Enter: devam · 1-4: seçenek · H: ipucu · E: etkileşim";
+            menuNot.text = "";   // kısayol satırı ana menüde görünmez; yalnızca oyun içinde (aşağıda)
+            var oyunNot = Yazi("KisayolNotu", oyunGuvenli, Tema.YaziKucuk - 4, new Color(Tema.Soluk.r, Tema.Soluk.g, Tema.Soluk.b, 0.8f), TextAnchor.LowerLeft);
+            oyunNot.raycastTarget = false;
+            Konum(oyunNot.rectTransform, 0.022f, 0.014f, 0.7f, 0.044f, 0, 0, 0, 0);
+            oyunNot.text = "Boşluk/Enter: devam · 1-4: seçenek · H: ipucu · E: etkileşim";
             if (oyun.IcerikHatalari.Count > 0) menuNot.text = "İÇERİK HATASI: " + oyun.IcerikHatalari[0];
 
             MenuIlerlemeGuncelle();
