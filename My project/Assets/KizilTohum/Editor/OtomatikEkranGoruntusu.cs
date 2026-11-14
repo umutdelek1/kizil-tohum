@@ -23,6 +23,7 @@ namespace KizilTohum.Editor
 
         static IEnumerator<object> akis;
         const string BoyutBayrak = "KT_BoyutTesti";
+        const string VideoBayrak = "KT_VideoTesti";
         static double bekleBitis, kosulBitis;
         static Func<bool> beklenen;
         static string klasor;
@@ -36,6 +37,20 @@ namespace KizilTohum.Editor
         static OtomatikEkranGoruntusu()
         {
             EditorApplication.playModeStateChanged += ModDegisti;
+            EditorApplication.update += TetikKontrol;
+        }
+
+        // Menüye tıklamadan başlatma: <proje>/Temp/kt_tetik.txt içine "ekran", "boyut" ya da "video" yazılır (editör otomasyonu için).
+        static void TetikKontrol()
+        {
+            if (akis != null || EditorApplication.isCompiling || EditorApplication.isPlayingOrWillChangePlaymode) return;
+            string yol = Path.Combine(Path.GetDirectoryName(Application.dataPath), "Temp", "kt_tetik.txt");
+            if (!File.Exists(yol)) return;
+            string komut;
+            try { komut = File.ReadAllText(yol).Trim().ToLowerInvariant(); File.Delete(yol); } catch (Exception) { return; }
+            if (komut == "video") VideoTestiBaslat();
+            else if (komut == "boyut") BoyutTestiBaslat();
+            else if (komut == "ekran") MenudenBaslat();
         }
 
         /// <summary>Pencere oranı testi: 1920x1080, 2560x1080, 1280x1024 ve 1000x800 için menü, harita, KT04-5 ve final görüntüsü.</summary>
@@ -43,6 +58,18 @@ namespace KizilTohum.Editor
         static void BoyutTestiBaslat()
         {
             SessionState.SetBool(BoyutBayrak, true);
+            SessionState.SetBool(VideoBayrak, false);
+            SessionState.SetBool(Bayrak, true);
+            if (EditorApplication.isPlaying) Kur();
+            else EditorApplication.EnterPlaymode();
+        }
+
+        /// <summary>Sahne videoları (KT01-5, KT01-10a, KT08-10), eksik dosya yedeği ve haritadaki "Yakında" kartları.</summary>
+        [MenuItem("Kızıl Tohum/Video ve Yakında Testi")]
+        static void VideoTestiBaslat()
+        {
+            SessionState.SetBool(BoyutBayrak, false);
+            SessionState.SetBool(VideoBayrak, true);
             SessionState.SetBool(Bayrak, true);
             if (EditorApplication.isPlaying) Kur();
             else EditorApplication.EnterPlaymode();
@@ -52,6 +79,7 @@ namespace KizilTohum.Editor
         static void MenudenBaslat()
         {
             SessionState.SetBool(BoyutBayrak, false);
+            SessionState.SetBool(VideoBayrak, false);
             SessionState.SetBool(Bayrak, true);
             if (EditorApplication.isPlaying) Kur();
             else EditorApplication.EnterPlaymode();
@@ -89,7 +117,7 @@ namespace KizilTohum.Editor
             for (int i = 0; i < YedekAnahtarlar.Length; i++)
                 if (PlayerPrefs.HasKey(YedekAnahtarlar[i])) yedek[YedekAnahtarlar[i]] = PlayerPrefs.GetString(YedekAnahtarlar[i]);
 
-            akis = (SessionState.GetBool(BoyutBayrak, false) ? BoyutAkisi() : Akis()).GetEnumerator();
+            akis = (SessionState.GetBool(VideoBayrak, false) ? VideoAkisi() : SessionState.GetBool(BoyutBayrak, false) ? BoyutAkisi() : Akis()).GetEnumerator();
             bekleBitis = EditorApplication.timeSinceStartup; beklenen = null;
             EditorApplication.update += Guncelle;
         }
@@ -450,6 +478,48 @@ namespace KizilTohum.Editor
                 d.Kapat();
             }
             yield return 1.5f;
+        }
+
+        // ---------- sahne videosu + "Yakında" kartı testi ----------
+        static IEnumerable<object> VideoAkisi()
+        {
+            yield return (Func<bool>)(() => Arayuz != null && Yonetici != null);
+            yield return 3f;
+            // a) haritada kilitli 4 işaret
+            Cagir("HaritaAc"); yield return 3f;
+            foreach (var id in new[] { "laboratuvar", "komuta", "inis_pisti", "yol_kavsagi" })
+            {
+                var pin = NoktaBul(id);
+                if (pin == null) { Not("Nokta bulunamadı: " + id); continue; }
+                if (pin.Tiklandi != null) pin.Tiklandi();
+                yield return 1f;
+                Cek("50_yakinda_" + id); yield return 0.5f;
+                var m = typeof(HaritaEkrani).GetMethod("YakindaKapat", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (m != null && Harita != null) m.Invoke(Harita, null);
+                yield return 0.5f;
+            }
+            if (Harita != null) Harita.Kapat();
+
+            // b) KT01: duvar videosu (KT01-5), sera videosu (KT01-10a)
+            Cagir("GorevAc", "KT01"); yield return 0.5f; Cagir("VideoIptal");
+            foreach (var x in Gec(a => a.id == "KT01-5")) yield return x;
+            yield return 2.5f; KartKapat(); Cek("51_video_kt01_5_2sn"); yield return 0.5f;
+            yield return 8.5f; KartKapat(); Cek("52_video_kt01_5_son"); yield return 0.5f;
+            foreach (var x in Gec(a => a.id == "KT01-10a")) yield return x;
+            yield return 2.5f; KartKapat(); Cek("53_video_kt01_10a_2sn"); yield return 0.5f;
+            yield return 8.5f; KartKapat(); Cek("54_video_kt01_10a_son"); yield return 0.5f;
+
+            // c) KT08-10: 47 numaralı çekmece videosu
+            Cagir("GorevAc", "KT08"); yield return 0.5f; Cagir("VideoIptal");
+            foreach (var x in Gec(a => a.id == "KT08-10")) yield return x;
+            yield return 2.5f; KartKapat(); Cek("55_video_kt08_10_2sn"); yield return 0.5f;
+            yield return 8.5f; KartKapat(); Cek("56_video_kt08_10_son"); yield return 0.5f;
+
+            // d) yedek: olmayan video dosyası → duran görsel + eski yakınlaştırma (KT04-7)
+            Cagir("GorevAc", "KT04"); yield return 0.5f; Cagir("VideoIptal");
+            foreach (var g in Yonetici.Icerik.gorevler) foreach (var ad in g.adimlar) if (ad.id == "KT04-7") ad.sahneVideo = "Ic_olmayan_dosya";
+            foreach (var x in Gec(a => a.id == "KT04-7")) yield return x;
+            yield return 4f; KartKapat(); Cek("57_video_yedek_kt04_7_duran_gorsel"); yield return 0.5f;
         }
 
         // ---------- pencere oranı testi ----------

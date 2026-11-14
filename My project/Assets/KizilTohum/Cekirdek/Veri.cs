@@ -122,6 +122,7 @@ namespace KizilTohum
         public float kameraSure;   // sn; 0 ise Tema.KameraSure
         public string gecis;       // GecisTipi; boşsa capraz
         public string video;       // StreamingAssets/Video/ altındaki dosya adı
+        public string sahneVideo;  // sahne arka planında bir kez oynayan sessiz klip: StreamingAssets/Video/ altında dosya adı (uzantısız). Yoksa/hata verirse duran görsel + eski yakınlaştırma
         public string tohum7;      // TOHUM-7 ifadesi: normal | uyari | olcum | memnun (boşsa durumdan / metindeki anahtar kelimelerden seçilir)
         public string ada;         // Ada'nın bu adımdaki ifadesi: normal | sevincli | endiseli | endiseli_hafif | saskin (boşsa duruma göre)
         public string gorsel3d;    // Resources/Gorseller/ altında yol (örn. Sahneler3D/sarkik_bitki_3d); yoksa/yüklenemezse "gorsel" kullanılır

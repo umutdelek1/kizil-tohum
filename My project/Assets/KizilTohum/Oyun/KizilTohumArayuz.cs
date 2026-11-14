@@ -29,6 +29,8 @@ namespace KizilTohum
             public float sure, basla;
             public bool giris;    // hafif yakın başlayıp geri çekilir
             public Vector2 fare;  // yumuşatılmış fare paralaksı
+            public bool videoAktif;      // sahne videosu varken duran görselin yakınlaştırması kapalı; video hata verirse açılır
+            public SahneVideosu video;
         }
 
         readonly List<SahneSlot> slotlar = new List<SahneSlot>();
@@ -838,6 +840,7 @@ namespace KizilTohum
                     r.offsetMin = new Vector2(-Tema.ParalaksSahne, -Tema.ParalaksSahne); r.offsetMax = new Vector2(Tema.ParalaksSahne, Tema.ParalaksSahne);
                     s.katman.Add(r); s.derinlik.Add(i);
                 }
+                VideoEkle(s, a);
                 return s;
             }
             Sprite spr = yeni3d;   // yeni görsel; yoksa eskiye düşer
@@ -850,12 +853,27 @@ namespace KizilTohum
                 Doldur(im.rectTransform);
                 s.katman.Add(im.rectTransform); s.derinlik.Add(-1);
             }
+            VideoEkle(s, a);
             return s; // resim de yoksa slot boş kalır, arkadaki Tema.Sahne rengi görünür
+        }
+
+        // Adımın "sahneVideo" alanı varsa klibi duran görselin üstüne ekler (Kapla katmanında, slotun çocuğu olarak).
+        // Hazır olana kadar duran görsel görünür; dosya yok / hata → duran görsel ve eski yakınlaştırma.
+        void VideoEkle(SahneSlot s, Adim a)
+        {
+            if (string.IsNullOrEmpty(a.sahneVideo)) return;
+            s.video = SahneVideosu.Kur(s.kok, a.sahneVideo, () => { s.videoAktif = false; s.basla = Time.unscaledTime; });
+            s.videoAktif = s.video != null;
         }
 
         // Zamanla kendi oynayan kamera: itme / cekme / kaydirmaSol / kaydirmaSag / sabit.
         void KameraUygula(SahneSlot s, float simdi)
         {
+            if (s.videoAktif)   // videolu sahnede eski statik yakınlaştırma/paralaks kapalı
+            {
+                for (int k = 0; k < s.katman.Count; k++) { if (s.katman[k] == null) continue; s.katman[k].anchoredPosition = Vector2.zero; s.katman[k].localScale = Vector3.one; }
+                return;
+            }
             float e = simdi - s.basla;
             float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(e / s.sure));
             float yakin = s.giris ? 1f + Tema.GirisYakinlik * (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(e / Tema.GirisCekilmeSure))) : 1f;
